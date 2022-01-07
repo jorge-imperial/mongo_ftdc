@@ -28,7 +28,6 @@ Installation
 
 **Building on Unix (Ubuntu, Centos, macOS)**
 
- You will need to install packages. Please see https://github.com/jorge-imperial/mongo_ftdc/blob/main/docs/build.md
  
   
  1. clone this repository and change to the top level directory.
@@ -38,23 +37,31 @@ Installation
       ```
       
  2. Install Python libraries to build binaries. Create a virtual environment to make your life easier.
+ 
       ```
       python3 -m venv venv
       source venv/bin/activate
       pip install .
       ```
-    You will now have built and installed in your virtual environment.
+      
+    You will now have built and installed in your virtual environment. If you need to rebuild, please remove the _skbuild_ directory and its contents between build runs.
+    
     
 
-Alternatively, you can use setup.py directly, but for that you will need to manually install the required libraries by running
-     ```
-     pip install -r requirements
-     ```
+Alternatively, you can use setup.py directly, but for that you will need to manually install the required libraries into your virtual environment by running
+
+     
+     cd mongo_ftdc
+     pip install -r requirements.txt
+     
+     
 After which you can create a source distribution or a binary wheel:
-     ```
+
+     
      python3 setup.py sdist
      python3 setup.py bdist_wheel
-     ```
+     
+These will reside in the _dist_ directory.
 
 
 **Building on Windows**
