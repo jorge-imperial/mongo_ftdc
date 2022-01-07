@@ -1,0 +1,1 @@
+.. automodule:: mongo_ftdc

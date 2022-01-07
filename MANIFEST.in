@@ -1,0 +1,17 @@
+include version.py README.md pyproject.toml CMakeLists.txt
+graft src
+graft tests
+prune tests/diagnostic.data
+prune tests/diagnostic.data_40
+prune src/mongo-c-driver/src/libmongoc
+prune src/mongo-c-driver/src/zlib*
+prune src/mongo-c-driver/src/kms-message
+prune src/mongo-c-driver/src/.evergreen
+prune  src/mongo-c-driver/src/libbson/doc/
+prune  src/mongo-c-driver/src/libbson/tests/binary
+prune  src/mongo-c-driver/src/libbson/tests/json
+prune  src/mongo-c-driver/src/libmongoc
+prune  tests/output_ts.csv
+prune  tests/output_ts.json
+
+
