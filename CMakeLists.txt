@@ -7,13 +7,12 @@ set(ENABLE_MONGOC OFF)
 
 add_subdirectory(src/mongo-c-driver)
 
-
 # Get version from file
-file(READ "_version.py" ver)
+file(READ "version.py" ver)
 string(REGEX MATCH "^__version__ = ['\"]([^'\"]*)['\"]" _ ${ver})
 set(file_version ${CMAKE_MATCH_1})
 
-MESSAGE( "------------------------Version: " ${file_version}  "----------------------------")
+MESSAGE( "---------------------- pyftdc version: " ${file_version}  "----------------------------")
 project(pyftdc VERSION ${file_version})
 
 if(SKBUILD)
