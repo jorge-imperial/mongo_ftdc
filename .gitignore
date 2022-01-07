@@ -1,3 +1,8 @@
 /cmake-build-debug/
 /venv/
 /tests/output*.json
+/_skbuild
+MANIFEST
+/src/pyftdc.egg-info/
+/dist
+/.idea
