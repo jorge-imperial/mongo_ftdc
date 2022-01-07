@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function
 import sys
 import re
 
-# Version
+#Version
 VERSIONFILE="version.py"
 verstrline = open(VERSIONFILE, "rt").read()
 VSRE = r"^__version__ = ['\"]([^'\"]*)['\"]"
@@ -26,18 +25,21 @@ except ImportError:
 
 from setuptools import find_packages
 
-
 setup(
     name="pyftdc",
-    version=verstr,
+    version="0.0.26",
     description="A parser for MongoDB FTDC files, with Python bindings.",
     author="Jorge Imperial",
-    author_email='jorgeluis.imperial@gmail.com',
-    url="https://github.com/jorge-imperial/mongo_ftdc",
+    author_email="jorgeluis.imperial@gmail.com",
     license="Apache v2",
-    packages=find_packages(where='src'),
+    packages=find_packages(where="src"),
     package_dir={"": "src"},
     cmake_install_dir="src/pyftdc",
     include_package_data=True,
-    install_requires=['numpy','pybind11']
+    extras_require={"test": ["pytest"]},
+    python_requires=">=3.6",
+    install_requires=['numpy']
+
 )
+
+
