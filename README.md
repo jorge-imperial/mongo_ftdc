@@ -26,7 +26,7 @@ A MongoDB FTDC files parser written in C++ that provides Python bindings using [
 Installation
 ------------
 
-**Building on Unix (Linux, macOS)**
+**Building on Unix (Ubuntu, Centos, macOS)**
 
  You will need to install packages. Please see https://github.com/jorge-imperial/mongo_ftdc/blob/main/docs/build.md
  
@@ -41,40 +41,26 @@ Installation
       ```
       python3 -m venv venv
       source venv/bin/activate
-      pip install pybind11 cmake ninja wheel scikit-build
+      pip install .
       ```
- 3. Build local wheel 
-      ```
-       python setup.py bdist_wheel
-      ```
- 4. Install locally using one of the following lines, depending on your target environment: 
+    You will now have built and installed in your virtual environment.
+    
+
+Alternatively, you can use setup.py directly, but for that you will need to manually install the required libraries by running
      ```
-      pip install dist/pyftdc-0.0.1-cp39-cp39-macosx_11_0_x86_64.whl
-      
-      pip install dist/pyftdc-0.0.1-cp38-cp38-linux_x86_64.whl
-      
-      pip install dist/pyftdc-0.0.1-cp39-cp39-macosx_11_0_arm64.whl
+     pip install -r requirements
      ```
+After which you can create a source distribution or a binary wheel:
+     ```
+     python3 setup.py sdist
+     python3 setup.py bdist_wheel
+     ```
+
 
 **Building on Windows**
   
-  Not tested yet.
-
-**Building C++ tests**
-
-NB: To build and run C++ tests you might need to explicitly define the path to `pybind11Config.cmake`. This can be done running 
-
-```
-cd mongo_ftdc
-PYBINDCMAKE=$(find `pwd` -name pybind11Config.cmake)
-PYBIND11PATH=$(dirname $PYBINDCMAKE)
-mkdir BUILD  ; cd BUILD
-source ../venv/bin/activate
-cmake -D pybind11_DIR=$PYBIND11PATH ..
-make -j8
-```
-
-Remember to install all packages, as described here:  https://github.com/jorge-imperial/mongo_ftdc/blob/main/docs/build.md
+  Not tested yet, but 'It should work'(TM)
+  
 
 
 License
