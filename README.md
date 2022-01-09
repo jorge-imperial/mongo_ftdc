@@ -31,6 +31,7 @@ Requisites
 To build the source distribution, you will need Boost 1.75 or newer.
 Python 3.6 or newer, Python3-dev installed.
 
+Please read the [build document](docs/build.md) for more details.
 
 
 Installation
