@@ -23,6 +23,16 @@ A MongoDB FTDC files parser written in C++ that provides Python bindings using [
 [actions-wheels-link]:     https://github.com/pybind/pyftdc/actions?query=workflow%3AWheels
 [actions-wheels-badge]:    https://github.com/pybind/pyftdc/workflows/Wheels/badge.svg
 
+
+
+Requisites
+------------
+
+To build the source distribution, you will need Boost 1.75 or newer.
+Python 3.6 or newer, Python3-dev installed.
+
+
+
 Installation
 ------------
 
