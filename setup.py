@@ -27,7 +27,7 @@ from setuptools import find_packages
 
 setup(
     name="pyftdc",
-    version="0.0.26",
+    version=verstr,
     description="A parser for MongoDB FTDC files, with Python bindings.",
     author="Jorge Imperial",
     author_email="jorgeluis.imperial@gmail.com",
