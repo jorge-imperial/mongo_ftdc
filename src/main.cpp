@@ -66,10 +66,10 @@ struct ParserClass {
 
     };
 
-    int parseFile(std::string file) {
+    int parseFile(std::string file, bool lazy=true) {
 
         fileList.emplace_back(file);
-        int n = pParser->parseFiles(&fileList, false, false, true);
+        int n = pParser->parseFiles(&fileList, false, false, lazy);
 
         if (n == 0) {
             // Timestamps, metric names, and metadata as fields in python
@@ -80,7 +80,7 @@ struct ParserClass {
         return n;
     }
 
-    int parseDir(std::string dir) {
+    int parseDir(std::string dir, bool lazy=true) {
         // if it exists, and it a directory, pop and push contents
         if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir)) {
 
@@ -89,7 +89,7 @@ struct ParserClass {
 
             // Not really necessary.
             std::sort(fileList.begin(), fileList.end());
-            int n = pParser->parseFiles(&fileList, false, false, true);
+            int n = pParser->parseFiles(&fileList, false, false, lazy);
 
             if (n == 0) {
                 // metric names and metadata as fields in python
@@ -250,10 +250,12 @@ PYBIND11_MODULE(_core, m) {
         .def(py::init<>())
         .def("parse_dir", &ParserClass::parseDir,
              "Parses all files in a directory",
-             py::arg("dir"))
+             py::arg("dir"),
+             py::arg("lazy") = true)
         .def("parse_file", &ParserClass::parseFile,
              "Parses one file",
-             py::arg("file"))
+             py::arg("file"),
+             py::arg("lazy") = true)
         .def("get_parsed_file_info", &ParserClass::getParsedFileInfo,
              "Returns information on parsed files")
         .def("dump_file_as_json", &ParserClass::dumpFileAsJson,

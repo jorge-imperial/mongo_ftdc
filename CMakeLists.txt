@@ -82,5 +82,5 @@ target_compile_definitions(_core PRIVATE VERSION_INFO=${PROJECT_VERSION})
 
 install(TARGETS _core DESTINATION .)
 
-#add_subdirectory(tests/cpp_tests)
+add_subdirectory(tests/cpp_tests)
 

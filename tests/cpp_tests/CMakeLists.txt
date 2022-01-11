@@ -32,7 +32,7 @@ target_include_directories (${PROJECT_NAME}  PUBLIC
         ${CMAKE_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}/src/include
         ${CMAKE_SOURCE_DIR}/src/mongo-c-driver/src/libbson/src
-        ${CMAKE_CURRENT_BINARY_DIR}/src/mongo-c-driver/src/libbson/src/bson
+        ${CMAKE_CURRENT_BINARY_DIR}/../../src/mongo-c-driver/libbson
 )
 
 target_link_directories(${PROJECT_NAME} PUBLIC
