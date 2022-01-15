@@ -60,6 +60,7 @@ struct ParserClass {
     std::vector<std::string> fileList;
     MetricNames metric_names;
     py::array_t<unsigned long> emptyArray;
+    MetricsPtr emptyMetrics;
 
     explicit ParserClass() {
         pParser = new FTDCParser();
@@ -103,10 +104,11 @@ struct ParserClass {
     }
 
     int dumpFileAsJson(std::string input, std::string output) {
-
-
-        // FTDCParser::dumpDocsAsJsonTimestamps(const std::string& inputFile, const std::string& outputFile,  const Timestamp start, const Timestamp end) {
         return pParser->dumpDocsAsJsonTimestamps(input, output, INVALID_TIMESTAMP, INVALID_TIMESTAMP);
+    }
+
+    int dumpFileAsCsv(std::string input, std::string output) {
+        return pParser->dumpDocsAsCsvTimestamps(input, output, INVALID_TIMESTAMP, INVALID_TIMESTAMP);
     }
 
     py::list
@@ -143,6 +145,28 @@ struct ParserClass {
                        size_t start = INVALID_TIMESTAMP, size_t end =INVALID_TIMESTAMP,
                        bool rated_metric = false) {
         return pParser->getMetric(metric_name, start, end, rated_metric);
+    }
+
+    std::vector<MetricsPtr> getMetricList(const std::vector<std::string> metric_names,
+                                                                      size_t start = INVALID_TIMESTAMP,
+                                                                      size_t end = INVALID_TIMESTAMP,
+                                                                      bool rated_metric = false) {
+
+        auto m = pParser->getMetric(std::move(metric_names), start, end, rated_metric);
+
+        std::vector<MetricsPtr> metricList;
+        for(int i=0;i<m.size();++i) {
+
+            // How to handle metric names that are not found?
+            if (m[i] != nullptr) {
+
+                metricList.emplace_back(m[i]);
+            }
+            else
+                metricList.emplace_back(emptyMetrics);
+
+        }
+        return metricList;
     }
 
     uint64_t getMetricSampleCount() { //TODO: may or may not be valid in lazy parsing mode
@@ -262,12 +286,22 @@ PYBIND11_MODULE(_core, m) {
              "Dumps a file contents to a file as JSON structures.",
              py::arg("input"),
              py::arg("output"))
+        .def("dump_file_as_csv", &ParserClass::dumpFileAsCsv,
+               "Dumps a file contents to a file as CSV file.",
+               py::arg("input"),
+               py::arg("output"))
         .def("get_metric", &ParserClass::getMetric,
              "Returns a list of values from the metrics, using starting and ending timestamps if specified",
              py::arg("metric_name"),
              py::arg("start") = ::INVALID_TIMESTAMP,
              py::arg("end") = ::INVALID_TIMESTAMP,
              py::arg("rated_metric") = false)
+        .def("get_metrics_list", &ParserClass::getMetricList,
+               "Returns a list of values from the metrics list, using starting and ending timestamps if specified",
+               py::arg("metric_name"),
+               py::arg("start") = ::INVALID_TIMESTAMP,
+               py::arg("end") = ::INVALID_TIMESTAMP,
+               py::arg("rated_metric") = false)
         .def("get_timestamps", &ParserClass::get_timestamps,
              "Returns timestamps",
              py::arg("start") = ::INVALID_TIMESTAMP,
