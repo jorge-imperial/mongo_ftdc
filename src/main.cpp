@@ -81,6 +81,10 @@ struct ParserClass {
         return n;
     }
 
+    void setVerbose(bool verbose) {
+        pParser->setVerbose(verbose);
+    }
+
     int parseDir(std::string dir, bool lazy=true) {
         // if it exists, and it a directory, pop and push contents
         if (std::filesystem::exists(dir) && std::filesystem::is_directory(dir)) {
@@ -272,6 +276,9 @@ PYBIND11_MODULE(_core, m) {
 
   py::class_<ParserClass>(m, "FTDCParser")
         .def(py::init<>())
+        .def("set_verbose", &ParserClass::setVerbose,
+             "Set verbose flag",
+             py::arg("verbose"))
         .def("parse_dir", &ParserClass::parseDir,
              "Parses all files in a directory",
              py::arg("dir"),

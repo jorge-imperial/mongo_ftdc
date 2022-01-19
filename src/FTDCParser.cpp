@@ -83,9 +83,6 @@ FTDCParser::parseInfoChunk(const bson_t *bson) {
 }
 
 
-
-
-
 bson_reader_t *
 FTDCParser::open(std::string file_path) {
 
@@ -126,7 +123,11 @@ FTDCParser::parseFiles(std::vector<std::string> const *filePaths,
     double date_time_before, date_time_after, date_time_delta;
 
     namespace logging = boost::log;
-    logging::core::get()->set_filter(logging::trivial::severity >  logging::trivial::debug);
+
+    if (verbose)
+       logging::core::get()->set_filter(logging::trivial::severity >  logging::trivial::debug);
+    else
+        logging::core::get()->set_filter(logging::trivial::severity >  logging::trivial::info);
 
     for (auto fileName : *filePaths) {
         BOOST_LOG_TRIVIAL(info) << "File: " << fileName;

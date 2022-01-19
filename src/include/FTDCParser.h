@@ -46,16 +46,18 @@ public:
                                         Timestamp start=INVALID_TIMESTAMP, Timestamp end=INVALID_TIMESTAMP,
                                         bool ratedMetric=false);
 
-
     size_t dumpDocsAsJsonTimestamps( std::string  inputFile,  std::string  outputFile, Timestamp start, Timestamp end);
     size_t dumpDocsAsCsvTimestamps( std::string  inputFile,  std::string  outputFile, Timestamp start, Timestamp end);
 
     std::string getJsonAtPosition(size_t position);
 
+    void setVerbose(bool verbosity) { verbose = verbosity; }
+
 private:
-     ParserTasksList parserTasks;
-     Dataset dataSet;
-     std::vector<std::string> metadata;
+    ParserTasksList parserTasks;
+    Dataset dataSet;
+    std::vector<std::string> metadata;
+    bool verbose = false;
 };
 
 
