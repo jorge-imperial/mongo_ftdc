@@ -73,6 +73,8 @@ public:
     std::string getJsonAtPosition(size_t position);
     std::string getJsonFromTimestamp(Timestamp ts);
 
+    std::string getCsvAtPosition(size_t pos);
+
 private:
     int inflate(const void *src, int srcLen, void *dst, int dstLen);
 

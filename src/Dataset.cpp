@@ -319,5 +319,10 @@ Dataset::getJsonAtPosition(int pos) {
 
 std::string
 Dataset::getCsvFromTimestamp(Timestamp ts) {
-    return nullptr;
+    auto location = getLocationInMetric(ts, true);
+
+    if (location.getChunkLoc() == Chunk::INVALID_CHUNK_NUMBER
+        || location.getSampleLoc() == Chunk::INVALID_TIMESTAMP_POS)
+        return "{}";
+    return chunkVector[location.getChunkLoc()]->getCsvAtPosition(location.getSampleLoc());
 }

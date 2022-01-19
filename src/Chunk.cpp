@@ -456,4 +456,15 @@ Chunk::getJsonFromTimestamp(Timestamp ts) {
     return "{}";
 }
 
+std::string
+Chunk::getCsvAtPosition(size_t pos) {
+
+    std::string ret;
+    for (auto m : metrics) {
+        ret += std::to_string(m->values[pos]);
+        ret += ",";
+    }
+    return ret;
+}
+
 

@@ -67,6 +67,9 @@ pybind11_add_module(_core MODULE
         src/CSVWriter.cpp
        )
 
+MESSAGE("*** Libbson headers:  "  ${CMAKE_SOURCE_DIR}/src/mongo-c-driver/src/libbson/src)
+MESSAGE("                       "  ${CMAKE_CURRENT_BINARY_DIR}/src/mongo-c-driver/src/libbson/bson)
+
 target_link_directories(_core PRIVATE
         ${CMAKE_CURRENT_BINARY_DIR}/src/mongo-c-driver/src/libbson
         )

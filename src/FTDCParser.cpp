@@ -286,7 +286,7 @@ FTDCParser::dumpDocsAsJsonTimestamps(const std::string  inputFile, const std::st
         //TODO: these could come from dataset.
         // Get metric names
         std::vector<std::string> metricNames;
-        metricNames = getMetricsNames();
+        //metricNames = getMetricsNames();
 
         JSONWriter w;
         return  w.dumpTimestamps( &dataSet, outputFile, start, end, false);
@@ -304,7 +304,7 @@ FTDCParser::dumpDocsAsCsvTimestamps(std::string inputFile, std::string outputFil
         //TODO: these could come from dataset.
         // Get metric names
         std::vector<std::string> metricNames;
-        metricNames = getMetricsNames();
+        //metricNames = getMetricsNames();
 
         CSVWriter c;
 

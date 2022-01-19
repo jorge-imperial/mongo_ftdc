@@ -39,9 +39,9 @@ JSONWriter::dumpTimestamps(Dataset *dataset,  std::string outputFile,
     std::map<std::string, MetricsPtr> hashedMetrics;
 
 
-    std::ofstream outdata;
-    outdata.open(outputFile); // opens the file
-    if (!outdata) { // file couldn't be opened
+    std::ofstream jsonFileStream;
+    jsonFileStream.open(outputFile); // opens the file
+    if (!jsonFileStream) { // file couldn't be opened
         return 0;
     }
 
@@ -62,7 +62,7 @@ JSONWriter::dumpTimestamps(Dataset *dataset,  std::string outputFile,
 
     for (size_t i = 0; i < numThreads; ++i)
         threads.add_thread(
-                new boost::thread(JsonWriterConsumerThread, &jsonTasks, dataset, &outdata));
+                new boost::thread(JsonWriterConsumerThread, &jsonTasks, dataset, &jsonFileStream));
 
     // Wait for threads to finish
     threads.join_all();
