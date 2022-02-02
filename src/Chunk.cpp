@@ -27,7 +27,7 @@ write_log(const std::vector<std::string>  pref, const char *key, const bson_t *d
 #endif
 }
 
-Chunk::Chunk (const uint8_t *data, size_t size, int64_t id=-1, bool logMetricNames=0) {
+Chunk::Chunk (const uint8_t *data, size_t size, int64_t id=-1) : deltasInChunk(0), metricsInChunk(0) {
     compressed = new uint8_t[size];
     compressed_size = size;
 

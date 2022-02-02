@@ -28,7 +28,7 @@ public:
     static const int INVALID_CHUNK_NUMBER   = INT_MAX;
     static const int INVALID_TIMESTAMP_POS = INT_MAX;
 
-    Chunk (const uint8_t *data, size_t size, int64_t id, bool logMetricNames);
+    Chunk (const uint8_t *data, size_t size, int64_t id);
     ~Chunk() {
         delete [] compressed ;
         delete [] decompressed;
@@ -60,8 +60,8 @@ public:
     }
     size_t getMetricNames(std::vector<std::string> & metricNames);
 
-    int64_t getId() const { return id; };
-    size_t getSamplesCount() const { return 1+deltasInChunk; };
+    int64_t getId()  { return id; };
+    size_t getSamplesCount()  { return 1+deltasInChunk; };
     Timestamp getStart() { return  start; };
     Timestamp getEnd() { return end; };
     void setTimestampLimits();
