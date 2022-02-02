@@ -74,7 +74,7 @@ Dataset::IsMetricInDataset(const std::string& metric) {
 }
 
 MetricsPtr
-Dataset::getMetric(std::string   metricName, const size_t start, const size_t end, bool ratedMetric)
+Dataset::getMetric(std::string   metricName, const Timestamp start, const Timestamp end, bool ratedMetric)
 {
 
     if (metricName.at(0) == '@')  {
@@ -211,7 +211,7 @@ Dataset::ConvertToRatedMetric(MetricsPtr metric) {
 }
 
 void
-Dataset::FileParsed(const std::string filePath, uint64_t start, uint64_t end, size_t samplesInFile) {
+Dataset::FileParsed(const std::string filePath, Timestamp start, Timestamp end, size_t samplesInFile) {
     int metricsNameLen = 0;
     for (auto chunk : chunkVector) {
 
@@ -247,8 +247,8 @@ Dataset::getMetrics(const std::vector<std::string> metricNames,
 }
 
 MetricsPtr
-Dataset::getMetricMatrix(const std::vector<std::string> metricNames, size_t *stride, const size_t start, const size_t end,
-                         const bool ratedMetrics) {
+Dataset::getMetricMatrix(const std::vector<std::string> metricNames, size_t *stride,
+                         const Timestamp start, const Timestamp end,  const bool ratedMetrics) {
 
     //  Get metrics
     auto mm = getMetrics(metricNames, start, end, ratedMetrics);

@@ -30,7 +30,7 @@ public:
     size_t getMetricNames(std::vector< std::string> & metricNames);
     size_t getMetricLength() const { return samplesInDataset; }
 
-    MetricsPtr getMetric(std::string   metricName, size_t start, size_t end, bool ratedMetric=false);
+    MetricsPtr getMetric(std::string   metricName, Timestamp start, Timestamp end, bool ratedMetric=false);
 
     uint64_t getMetricValue(std::string metricName, size_t pos);
 
@@ -49,7 +49,7 @@ public:
     std::vector<MetricsPtr> getMetrics( std::vector<std::string> metricNames,
                                                  size_t start,  size_t end,
                                                  bool ratedMetrics);
-    MetricsPtr getMetricMatrix( std::vector<std::string> metricNames, size_t *stride, size_t start,  size_t end,
+    MetricsPtr getMetricMatrix( std::vector<std::string> metricNames, size_t *stride, Timestamp start,  Timestamp end,
                      bool ratedMetrics);
 
     Timestamp getStartTimestamp();
@@ -62,7 +62,7 @@ public:
 
 private:
     std::vector<FileParsedData *> filesParsed;
-    SampleLocation getLocationInMetric(unsigned long ts, bool fromStart);
+    SampleLocation getLocationInMetric(Timestamp ts, bool fromStart);
     MetricsPtr assembleMetricFromChunks(std::string name,  SampleLocation startLocation, SampleLocation endLocation);
     bool ConvertToRatedMetric(MetricsPtr pVector);
 
