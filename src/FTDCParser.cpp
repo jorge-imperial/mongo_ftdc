@@ -51,15 +51,11 @@ FTDCParser::parseInfoChunk(const bson_t *bson) {
  int
  ParserTaskConsumerThread(ParserTasksList *parserTasks, Dataset *dataSet) {
 
-    bool logChunkMetrics = false;
     while (!parserTasks->empty()) {
 
         ParserTask  *task = parserTasks->pop();
 
-        auto chunk = new Chunk(task->getData(), task->getDataSize(), task->getId(), logChunkMetrics);
-
-        // only once
-        logChunkMetrics = false;
+        auto chunk = new Chunk(task->getData(), task->getDataSize(), task->getId());
 
         if (dataSet->getLazyParsing()) {
             dataSet->addChunk(chunk);
