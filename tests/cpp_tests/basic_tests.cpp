@@ -23,7 +23,7 @@
 // Run in the test directory
 static const char *DATA_TEST_FILE_NAME = "./cpp_tests/metrics.data";
 static const char *CSV__TEST_FILE_NAME = "./cpp_tests/first.csv";
-static const char *DATA_TEST_DIR = "./diagnostic.data_44/";
+static const char *DATA_TEST_DIR = "./diagnostic.data/";
 
 
 int ParserTaskConsumerThread(ParserTasksList *parserTasks, Dataset *dataSet);
@@ -357,6 +357,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
             break;
         }
 
+        parser->setVerbose(true);
         auto status = parser->parseFiles(files, false, false);
 
         BOOST_CHECK_EQUAL(status, 0);
@@ -505,7 +506,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         }
 
         parser->setVerbose(true);
-        auto status = parser->parseFiles(fileList, false, false);
+        auto status = parser->parseFiles(fileList, false, false, true);
 
         BOOST_CHECK_EQUAL(status, 0);
 
@@ -617,13 +618,19 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
 
         std::vector<std::string> files;
         files.emplace_back(DATA_TEST_FILE_NAME);
-        auto status = parser->parseFiles(files, false, false, true);
+        parser->setVerbose(true);
+        auto status = parser->parseFiles(files, false, false, false);
 
-        Timestamp ts_start = 1601561706000;
-        Timestamp ts_end = 1601563537000;
-        auto ts = parser->getMetric(std::string("start"), ts_start, ts_end);
 
-        BOOST_CHECK_EQUAL(status, 0);
+        auto ts = parser->getMetric(std::string("start"));
+
+        Timestamp ts_start = ts->at(0);
+        Timestamp ts_end = ts->at(ts->size()-1);
+
+        auto ts2 = parser->getMetric(std::string("start"), ts_start, ts_end);
+
+
+        BOOST_CHECK_EQUAL(ts->size(), ts2->size()+1);
     }
 
     BOOST_AUTO_TEST_CASE(lazy_parser) {     //
