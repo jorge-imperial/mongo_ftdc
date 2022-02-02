@@ -76,7 +76,6 @@ struct ParserClass {
             // Timestamps, metric names, and metadata as fields in python
             metric_names = pParser->getMetricsNames();
             metadata = pParser->getMetadata();
-
         }
         return n;
     }
