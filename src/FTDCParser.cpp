@@ -110,12 +110,13 @@ FTDCParser::parseFiles(std::string file_paths, const bool onlyMetadata, const bo
 
     boost::split(vector_files, file_paths, boost::is_any_of(","));
 
-    auto ret = parseFiles(&vector_files, onlyMetadata, onlyMetricNames, lazyParsing);
+    auto ret = parseFiles(vector_files, onlyMetadata, onlyMetricNames, lazyParsing);
     return ret;
 }
 
+
 int
-FTDCParser::parseFiles(std::vector<std::string> const *filePaths,
+FTDCParser::parseFiles(std::vector<std::string> filePaths,
                        const bool onlyMetadata, const bool onlyMetricNames, const bool lazyParsing) {
     bson_reader_t *reader;
     const bson_t *pBsonChunk;
@@ -129,7 +130,10 @@ FTDCParser::parseFiles(std::vector<std::string> const *filePaths,
     else
         logging::core::get()->set_filter(logging::trivial::severity >  logging::trivial::info);
 
-    for (auto fileName : *filePaths) {
+
+    std::sort( filePaths.begin(), filePaths.end());
+
+    for (auto fileName : filePaths) {
         BOOST_LOG_TRIVIAL(info) << "File: " << fileName;
 
         reader = this->open(fileName);

@@ -23,7 +23,8 @@
 class FTDCParser    {
 public:
     bson_reader_t* open(std::string file_path);
-    int parseFiles(std::vector<std::string> const *filePaths, bool onlyMetadata=false,  bool onlyMetricNames=false, bool lazyParsing=false);
+
+    int parseFiles(std::vector<std::string> filePaths, bool onlyMetadata=false, bool onlyMetricNames=false, bool lazyParsing=false);
     int parseFiles(std::string filePaths, bool onlyMetadata=false,  bool onlyMetricNames=false, bool lazyParsing=false);
 
     int parseInfoChunk (const bson_t *bson);
