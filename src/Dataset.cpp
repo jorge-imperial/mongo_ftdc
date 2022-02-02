@@ -105,7 +105,7 @@ Dataset::getMetric(std::string   metricName, const Timestamp start, const Timest
 }
 
 SampleLocation
-Dataset::getLocationInMetric(unsigned long ts, bool fromStart) {
+Dataset::getLocationInMetric(Timestamp ts, bool fromStart) {
 
     auto chunkPos = Chunk::INVALID_CHUNK_NUMBER;
     auto samplePos = Chunk::INVALID_TIMESTAMP_POS;
