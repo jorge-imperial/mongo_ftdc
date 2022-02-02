@@ -10,6 +10,8 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
 
+#include <boost/algorithm/string/classification.hpp>
+
 #include <fstream>
 #include <FTDCParser.h>
 #include <Chunk.h>
@@ -21,7 +23,7 @@
 // Run in the test directory
 static const char *DATA_TEST_FILE_NAME = "./cpp_tests/metrics.data";
 static const char *CSV__TEST_FILE_NAME = "./cpp_tests/first.csv";
-static const char *DATA_TEST_DIR = "./diagnostic.data_40/";
+static const char *DATA_TEST_DIR = "./diagnostic.data_44/";
 
 
 int ParserTaskConsumerThread(ParserTasksList *parserTasks, Dataset *dataSet);
@@ -348,13 +350,14 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         // Create parser
         auto parser = new FTDCParser();
 
-        //parser->keepChunkStructures(true);  // Do not release Chunks after parsing is done.
 
         std::vector<std::string> files;
+        for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR)) {
+            files.push_back(fileInPath.path().string());
+            break;
+        }
 
-        files.emplace_back(DATA_TEST_FILE_NAME);
-
-        auto status = parser->parseFiles(&files, false, false);
+        auto status = parser->parseFiles(files, false, false);
 
         BOOST_CHECK_EQUAL(status, 0);
         auto chunkVector = parser->getChunks();
@@ -369,12 +372,11 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
                 BOOST_CHECK_EQUAL(prevChunkFinalTimestamp + 1, thisChunkInitialTimestamp);
         }
     }
-
+/*
 
     BOOST_AUTO_TEST_CASE(timestamp_dataset_dir_monotony) {     // Are timestamps sequential?
         // Create parser
         auto parser = new FTDCParser();
-
 
         std::vector<std::string> fileList;
         for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
@@ -382,7 +384,8 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
 
         //parser->keepChunkStructures(true);
 
-        auto status = parser->parseFiles(&fileList, false, false);
+        parser->setVerbose(true);
+        auto status = parser->parseFiles(fileList, false, false);
         BOOST_CHECK_EQUAL(status, 0);
 
         auto chunkVector = parser->getChunks();
@@ -403,11 +406,12 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         // Create parser
         auto parser = new FTDCParser();
 
+        parser->setVerbose(true);
         std::vector<std::string> fileList;
         for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
             fileList.push_back(fileInPath.path().string());
 
-        auto status = parser->parseFiles(&fileList, false, false);
+        auto status = parser->parseFiles(fileList, false, false, false);
 
         BOOST_CHECK_EQUAL(status, 0);
 
@@ -429,6 +433,10 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
 
     }
 
+
+ */
+
+
     BOOST_AUTO_TEST_CASE(metrics) {     // Are there metrics here?
         // Create parser
         auto parser = new FTDCParser();
@@ -436,10 +444,12 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         std::vector<std::string> files;
 
         std::vector<std::string> fileList;
-        for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
+        for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR)) {
             fileList.push_back(fileInPath.path().string());
 
-        auto status = parser->parseFiles(&fileList, false, false);
+        }
+        parser->setVerbose(true);
+        auto status = parser->parseFiles(fileList, false, false);
         BOOST_CHECK_EQUAL(status, 0);
 
         auto metricNames = parser->getMetricsNames();
@@ -457,10 +467,12 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         auto parser = new FTDCParser();
 
         std::vector<std::string> fileList;
-        for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
+        for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR)) {
             fileList.push_back(fileInPath.path().string());
+        }
 
-        auto status = parser->parseFiles(&fileList, false, false);
+        parser->setVerbose(true);
+        auto status = parser->parseFiles(fileList, false, false);
 
         BOOST_CHECK_EQUAL(status, 0);
 
@@ -488,10 +500,12 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         auto parser = new FTDCParser();
 
         std::vector<std::string> fileList;
-        for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
+        for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR)) {
             fileList.push_back(fileInPath.path().string());
+        }
 
-        auto status = parser->parseFiles(&fileList, false, false);
+        parser->setVerbose(true);
+        auto status = parser->parseFiles(fileList, false, false);
 
         BOOST_CHECK_EQUAL(status, 0);
 
@@ -499,10 +513,10 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
 
         auto ts = parser->getMetric("start");
 
-        auto half_ts = (*ts)[ts->size()/2];
+        Timestamp half_ts = (*ts)[ts->size()/2];
 
-        auto first_half  = parser->getMetric("start",INVALID_TIMESTAMP, half_ts);
-        auto second_half = parser->getMetric("start", half_ts,INVALID_TIMESTAMP);
+        auto first_half  = parser->getMetric("start", INVALID_TIMESTAMP, half_ts);
+        auto second_half = parser->getMetric("start", half_ts, INVALID_TIMESTAMP);
         auto first_half_size = first_half->size();
         auto second_half_size = second_half->size();
 
@@ -535,10 +549,13 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         auto parser = new FTDCParser();
 
         std::vector<std::string> fileList;
-        for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
+        int fileCount=0;
+        for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR)) {
             fileList.push_back(fileInPath.path().string());
 
-        auto status = parser->parseFiles(&fileList, false, false);
+        }
+
+        auto status = parser->parseFiles(fileList, false, false);
 
         BOOST_CHECK_EQUAL(status, 0);
 
@@ -574,7 +591,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
             fileList.push_back(fileInPath.path().string());
 
-        auto status = parser->parseFiles(&fileList, false, false);
+        auto status = parser->parseFiles(fileList, false, false);
 
         BOOST_CHECK_EQUAL(status, 0);
 
@@ -595,6 +612,19 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
 
 
     // - - - -
+    BOOST_AUTO_TEST_CASE(timestamps_with_ts) {
+        auto parser = new FTDCParser();
+
+        std::vector<std::string> files;
+        files.emplace_back(DATA_TEST_FILE_NAME);
+        auto status = parser->parseFiles(files, false, false, true);
+
+        Timestamp ts_start = 1601561706000;
+        Timestamp ts_end = 1601563537000;
+        auto ts = parser->getMetric(std::string("start"), ts_start, ts_end);
+
+        BOOST_CHECK_EQUAL(status, 0);
+    }
 
     BOOST_AUTO_TEST_CASE(lazy_parser) {     //
         // Create parser
@@ -604,7 +634,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
             fileList.push_back(fileInPath.path().string());
 
-        auto status = parser->parseFiles(&fileList, false, false, true);
+        auto status = parser->parseFiles(fileList, false, false, true);
 
         BOOST_CHECK_EQUAL(status, 0);
 
@@ -636,7 +666,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
             fileList.push_back(fileInPath.path().string());
 
-        auto status = parser->parseFiles(&fileList, false, false, true);
+        auto status = parser->parseFiles(fileList, false, false, true);
 
         BOOST_CHECK_EQUAL(status, 0);
 
@@ -690,7 +720,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
             fileList.push_back(fileInPath.path().string());
 
-        auto status = parser->parseFiles(&fileList, false, false, true);
+        auto status = parser->parseFiles(fileList, false, false, true);
 
         BOOST_CHECK_EQUAL(status, 0);
 
@@ -727,7 +757,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
             fileList.push_back(fileInPath.path().string());
 
-        auto status = parser->parseFiles(&fileList, false, false, true);
+        auto status = parser->parseFiles(fileList, false, false, true);
 
         BOOST_CHECK_EQUAL(status, 0);
 
@@ -840,7 +870,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
             fileList.push_back(fileInPath.path().string());
 
-        auto status = parser->parseFiles(&fileList, false, false, true);
+        auto status = parser->parseFiles(fileList, false, false, true);
 
         auto metricList = parser->getMetric(ftdc_metric_keys);
 
@@ -966,7 +996,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
             break; // only one
         }
 
-        auto status = parser->parseFiles(&fileList, false, false, true);
+        auto status = parser->parseFiles(fileList, false, false, true);
         auto fi = parser->getParsedFileInfo();
         for (auto f : fi) {
 
@@ -997,7 +1027,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_basic_suite)
         for (auto &&fileInPath: std::filesystem::directory_iterator(DATA_TEST_DIR))
             fileList.push_back(fileInPath.path().string());
 
-        auto status = parser->parseFiles(&fileList, false, false, false);
+        auto status = parser->parseFiles(fileList, false, false, false);
         auto p = parser->getJsonAtPosition(1);
 
         BOOST_TEST_MESSAGE(p);
