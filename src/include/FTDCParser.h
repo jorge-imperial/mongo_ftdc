@@ -35,7 +35,7 @@ public:
     std::vector<MetricsPtr> getMetric( std::vector<std::string> metricNames,
                                                 Timestamp start=INVALID_TIMESTAMP, Timestamp end=INVALID_TIMESTAMP, bool ratedMetric=false);
  
-    size_t getMetricLength() { return dataSet.getMetricLength(); }
+    size_t getMetricLength() { return 0; }
     std::vector<Chunk*> getChunks() { return dataSet.getChunkVector(); }
 
     std::vector<std::string> getMetadata() { return metadata; }
@@ -52,7 +52,10 @@ public:
 
     std::string getJsonAtPosition(size_t position);
 
-    void setVerbose(bool verbosity) { verbose = verbosity; }
+    void setVerbose(bool verbosity);
+
+    // For testing.
+    Dataset* getDataset() { return &dataSet; }
 
 private:
     ParserTasksList parserTasks;

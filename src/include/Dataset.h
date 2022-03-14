@@ -28,7 +28,6 @@ public:
     Chunk *getChunk(size_t n) { return (n < chunkVector.size()) ? chunkVector[n] : nullptr; }
     std::vector<Chunk *> getChunkVector() { return chunkVector; }
     size_t getMetricNames(std::vector< std::string> & metricNames);
-    size_t getMetricLength() const { return samplesInDataset; }
 
     MetricsPtr getMetric(std::string   metricName, Timestamp start, Timestamp end, bool ratedMetric=false);
 
@@ -44,7 +43,7 @@ public:
     size_t LoadMetricsNamesFromChunk();
 
     void setLazyParsingFlag() { lazyParsing = true; }
-    [[nodiscard]] bool getLazyParsing() const { return lazyParsing; }
+    bool getLazyParsing() const { return lazyParsing; }
 
     std::vector<MetricsPtr> getMetrics( std::vector<std::string> metricNames,
                                                  size_t start,  size_t end,
@@ -56,13 +55,15 @@ public:
     Timestamp getEndTimestamp();
 
     std::string getJsonFromTimestamp(Timestamp ts);
+    std::string getCsvFromTimestamp(Timestamp ts);
+
     std::string getJsonAtPosition(int pos);
 
-    std::string getCsvFromTimestamp(Timestamp ts);
+    SampleLocation getLocationInMetric(Timestamp ts, bool fromStart);
 
 private:
     std::vector<FileParsedData *> filesParsed;
-    SampleLocation getLocationInMetric(Timestamp ts, bool fromStart);
+
     MetricsPtr assembleMetricFromChunks(std::string name,  SampleLocation startLocation, SampleLocation endLocation);
     bool ConvertToRatedMetric(MetricsPtr pVector);
 

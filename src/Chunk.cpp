@@ -46,7 +46,7 @@ size_t
 Chunk::getMetricNames(std::vector<std::string> & metricNames) {
 
     for (auto &m : metrics) {
-        metricNames.emplace_back(m->name);
+        metricNames.emplace_back(m->getName());
     }
     return metricNames.size();
 }
@@ -121,9 +121,10 @@ Chunk::ReadVariableSizedInts() {
     const uint8_t *p = this->decompressed; // data;
     auto docSize = *(uint32_t*) this->decompressed;
 
-    if (metrics.size() != metricsInChunk) {
+    auto metricsSize = metrics.size();
+    if (metricsSize != metricsInChunk) {
         BOOST_LOG_TRIVIAL(fatal) << "Chunks in document and in values do not match " << metrics.size() << " != " << metricsInChunk;
-        return -1;
+        //return -1;
     }
 
     auto offset = docSize + 8;
@@ -131,7 +132,7 @@ Chunk::ReadVariableSizedInts() {
 
     auto dataRangeSize = this->decompressed_size-offset;
 
-    if (dataRangeSize <= 0) return 0;
+    //if (dataRangeSize <= 0) return 0;
 
     ConstDataRangeCursor dataRangeCursor(q,dataRangeSize);
 
@@ -139,7 +140,7 @@ Chunk::ReadVariableSizedInts() {
 
     for (int m=0; m < metrics.size(); ++m) {
 
-        auto values = metrics[m]->values; //
+        auto values = metrics[m]->getValues(); //
         auto value = values[0];
 
         for (int s = 0; s < deltasInChunk; ++s) {
@@ -158,6 +159,7 @@ Chunk::ReadVariableSizedInts() {
             value += delta;
             values[s + 1] = value;
         }
+        metrics[m]->setSampleCount(deltasInChunk);
     }
     return count;
 }
@@ -337,7 +339,7 @@ Chunk::ConstructMetrics(const uint8_t* data ) {
 
             ::bson_iter_visit_all(&iter, &vt, &v);
 
-            //   BOOST_LOG_TRIVIAL(debug) << "Visited: " << v.visited << "  Metrics: " << v.metrics.size();
+            BOOST_LOG_TRIVIAL(debug) << "Visited: " << v.visited << "  Metrics: " << v.metrics->size();
             if (metricsInChunk != metrics.size())
                 BOOST_LOG_TRIVIAL(error) << "Wrong number of metrics: " << v.metrics->size() << "!=" << metricsInChunk;
         }
@@ -352,8 +354,8 @@ Chunk::ConstructMetrics(const uint8_t* data ) {
 
 void
 Chunk::setTimestampLimits() {
-    start = metrics[0]->values[0];
-    end = metrics[0]->values[getSamplesCount()-1];
+    start = metrics[0]->getValue(0);
+    end = metrics[0]->getValue( getSamplesCount()-1);
 }
 
 bool Chunk::Consume() {
@@ -393,25 +395,25 @@ Chunk::getJsonAtPosition(size_t position) {
     if (bson_iter_init (&iter, newBson)) {
 
         for (int i=0;i<metrics.size(); ++i) {
-            if (bson_iter_find_descendant(&iter, metrics[i]->name.c_str(), &baz)) {
+            if (bson_iter_find_descendant(&iter, metrics[i]->getName().c_str(), &baz)) {
 
                 auto t = bson_iter_type(&baz);
 
                 switch (t) {
                     case BSON_TYPE_INT64:
-                        bson_iter_overwrite_int64(&baz, metrics[i]->values[position]);
+                        bson_iter_overwrite_int64(&baz, metrics[i]->getValue(position));
                         break;
                     case BSON_TYPE_INT32:
-                        bson_iter_overwrite_int32(&baz, metrics[i]->values[position]);
+                        bson_iter_overwrite_int32(&baz, metrics[i]->getValue( position ));
                         break;
                     case BSON_TYPE_DATE_TIME:
-                        bson_iter_overwrite_date_time(&baz, metrics[i]->values[position]);
+                        bson_iter_overwrite_date_time(&baz, metrics[i]->getValue( position));
                         break;
                     case BSON_TYPE_DOUBLE:
-                        bson_iter_overwrite_double(&baz, metrics[i]->values[position]);
+                        bson_iter_overwrite_double(&baz, metrics[i]->getValue( position));
                         break;
                     case BSON_TYPE_BOOL:
-                        bson_iter_overwrite_bool(&baz, metrics[i]->values[position]);
+                        bson_iter_overwrite_bool(&baz, metrics[i]->getValue( position));
                         break;
                     case BSON_TYPE_UTF8:
                     case  BSON_TYPE_EOD:
@@ -448,7 +450,7 @@ std::string
 Chunk::getJsonFromTimestamp(Timestamp ts) {
 
     for (size_t i=0;i<metrics.size(); ++i) {
-        if (metrics[0]->values[i] == ts) {
+        if (metrics[0]->getValue(i) == ts) {
             return getJsonAtPosition(i);
         }
     }
@@ -461,7 +463,7 @@ Chunk::getCsvAtPosition(size_t pos) {
 
     std::string ret;
     for (auto m : metrics) {
-        ret += std::to_string(m->values[pos]);
+        ret += std::to_string(m->getValue(pos));
         ret += ",";
     }
     return ret;

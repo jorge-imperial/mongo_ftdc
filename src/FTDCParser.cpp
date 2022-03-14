@@ -55,6 +55,11 @@ FTDCParser::parseInfoChunk(const bson_t *bson) {
 
         ParserTask  *task = parserTasks->pop();
 
+        if (!task) {
+            BOOST_LOG_TRIVIAL(error) <<   "Null parser task in ParserTaskConsumerThread()" ;
+            return 1; //
+        }
+
         auto chunk = new Chunk(task->getData(), task->getDataSize(), task->getId());
 
         if (dataSet->getLazyParsing()) {
@@ -121,12 +126,6 @@ FTDCParser::parseFiles(std::vector<std::string> filePaths,
 
     namespace logging = boost::log;
 
-    if (verbose)
-       logging::core::get()->set_filter(logging::trivial::severity >  logging::trivial::debug);
-    else
-        logging::core::get()->set_filter(logging::trivial::severity >  logging::trivial::info);
-
-
     std::sort( filePaths.begin(), filePaths.end());
 
     for (auto fileName : filePaths) {
@@ -166,6 +165,7 @@ FTDCParser::parseFiles(std::vector<std::string> filePaths,
                             // the memory pointed to by data is managed internally. Better make a copy
                             uint8_t *bin_data = new uint8_t [bin_size];
                             memcpy(bin_data, data, bin_size);
+                            BOOST_LOG_TRIVIAL(debug) << "Parser task: size="   << bin_size << " id=" << current_id;
                             parserTasks.push(bin_data, bin_size, current_id);
 
                         } else if (BSON_ITER_HOLDS_DATE_TIME(&iter)) {
@@ -191,6 +191,7 @@ FTDCParser::parseFiles(std::vector<std::string> filePaths,
         boost::thread_group threads;
         for (size_t i = 0; i < numThreads; ++i)
             threads.add_thread(new boost::thread(ParserTaskConsumerThread, &parserTasks, &dataSet));
+
         // Wait for threads to finish
         threads.join_all();
 
@@ -207,8 +208,7 @@ FTDCParser::parseFiles(std::vector<std::string> filePaths,
 
         BOOST_LOG_TRIVIAL(info) << "File parsed in " << date_time_delta
                  << " secs. There are " << dataSet.getChunkCount() << " chunks, "
-                 << dataSet.getMetricNamesCount() << " metrics with "
-                 << dataSet.getMetricLength() << " samples";
+                 << dataSet.getMetricNamesCount() << " metrics";
 
         struct rusage usage{0};
         getrusage(RUSAGE_SELF, &usage);
@@ -284,11 +284,6 @@ FTDCParser::dumpDocsAsJsonTimestamps(const std::string  inputFile, const std::st
 
     if (!parseFiles(inputFile, false, false, false)) {
 
-        //TODO: these could come from dataset.
-        // Get metric names
-        std::vector<std::string> metricNames;
-        //metricNames = getMetricsNames();
-
         JSONWriter w;
         return  w.dumpTimestamps( &dataSet, outputFile, start, end, false);
     }
@@ -302,11 +297,6 @@ FTDCParser::dumpDocsAsCsvTimestamps(std::string inputFile, std::string outputFil
 
     if (!parseFiles(std::move(inputFile), false, false, false)) {
 
-        //TODO: these could come from dataset.
-        // Get metric names
-        std::vector<std::string> metricNames;
-        //metricNames = getMetricsNames();
-
         CSVWriter c;
 
         c.dumpCSVTimestamps(&dataSet, outputFile, start, end, false);
@@ -314,5 +304,12 @@ FTDCParser::dumpDocsAsCsvTimestamps(std::string inputFile, std::string outputFil
     }
     else
         return 0;
+}
+
+void FTDCParser::setVerbose(bool verbosity) {
+        if (verbose)
+            logging::core::get()->set_filter(logging::trivial::severity >=  logging::trivial::trace);
+        else
+            logging::core::get()->set_filter(logging::trivial::severity >  logging::trivial::info);verbose = verbosity;
 }
 

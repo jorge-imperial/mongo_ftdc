@@ -132,7 +132,7 @@ Dataset::getLocationInMetric(Timestamp ts, bool fromStart) {
             // Timestamps 'start' metrics are always the 0-th position
             auto timestamps = c->getMetric(0);
             for (int i = 0; i < ChunkMetric::MAX_SAMPLES; ++i) {
-                if (timestamps->values[i] >= ts) {
+                if (timestamps->getValue(i) >= ts) {
                     samplePos = i;
 
                     if (i ==0 && !fromStart) {
@@ -174,17 +174,25 @@ Dataset::assembleMetricFromChunks(const std::string metricName, SampleLocation s
         p->reserve(sampleCount);
 
         // first chunk
-        auto c = chunkVector[startChunk]->getMetric(metricName);
-        p->assign(c, c + (ChunkMetric::MAX_SAMPLES - startSamplePos));
+        auto metric = chunkVector[startChunk]->getMetric(metricName);
+        p->assign(metric, metric + (ChunkMetric::MAX_SAMPLES - startSamplePos));
         // Append chunks
         for (int i = startChunk + 1; i < endChunk; ++i) {
-            c = chunkVector[i]->getMetric(metricName);
-            p->insert(p->end(), c, c + ChunkMetric::MAX_SAMPLES);
+            metric = chunkVector[i]->getMetric(metricName);
+            if (!metric) {
+                BOOST_LOG_TRIVIAL(error) << "Empty metric in chunk: " << i << " name= '" << metricName << "'";
+            }
+            else {
+                p->insert(p->end(), metric, metric + ChunkMetric::MAX_SAMPLES);
+            }
         }
 
         // Append last chunk
-        c = chunkVector[endChunk]->getMetric(metricName);
-        p->insert(p->end(), c, c + endSamplePos);
+        metric = chunkVector[endChunk]->getMetric(metricName);
+        if (!metric)
+            BOOST_LOG_TRIVIAL(error) << "Empty metric in last chunk: name='" << metricName <<"'";
+        else
+            p->insert(p->end(), metric, metric + endSamplePos);
     }
     return p;
 }

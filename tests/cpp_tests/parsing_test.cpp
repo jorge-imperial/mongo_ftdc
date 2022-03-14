@@ -2,19 +2,22 @@
 // Created by jorge on 3/13/22.
 //
 
-#include <boost/test/included/unit_test.hpp>
+//#include <boost/test/included/unit_test.hpp>
 #include <boost/test/parameterized_test.hpp>
-
 #include <boost/format.hpp>
 
-#include <boost/algorithm/string/classification.hpp>
+
+#include <boost/test/included/unit_test.hpp>
 
 #include <FTDCParser.h>
 #include <Chunk.h>
 #include <iostream>
+
 #include <boost/thread.hpp>
 
 #include <filesystem>
+#include <boost/test/unit_test_log.hpp>
+#include <boost/test/tools/old/interface.hpp>
 
 static const char *DATA_FILE_NAMES[] = { "./cpp_tests/metrics.3.6.17.ftdc",
                                          "./cpp_tests/metrics.4.0.26.ftdc",
@@ -31,40 +34,40 @@ static const char *CSV_FILE_NAMES[] = { "./cpp_tests/metrics.3.6.17.csv",
 
 int ParserTaskConsumerThread(ParserTasksList *parserTasks, Dataset *dataSet);
 
-
-size_t readMetricsFromCSV(std::string csvTestFile, std::vector<ChunkMetric *> * metrics) {
-
-    metrics->clear();
-    metrics->reserve(2000);
-
-    //
-    std::ifstream f;
-    f.open(csvTestFile, std::ios::in);
-    std::string line;
-    while (getline(f, line)) { //read data from file object and put it into string.
-
-        std::stringstream ss(line);
-        std::string token;
-        ChunkMetric *pM = nullptr;
-        int field = 0;
-        do {
-            std::getline(ss, token, ';');
-            if (!pM) {
-                pM = new ChunkMetric(token, BSON_TYPE_INT64, 0);
-            } else {
-                auto val = pM->getValues();
-                val[field++] = atol(token.c_str());
-            }
-
-        } while (field < 300);
-        metrics->emplace_back(pM);
-    }
-    f.close();
-
-    return metrics->size();
-}
-
 BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
+
+    size_t readMetricsFromCSV(std::string csvTestFile, std::vector<ChunkMetric *> * metrics) {
+
+        metrics->clear();
+        metrics->reserve(2000);
+
+        //
+        std::ifstream f;
+        f.open(csvTestFile, std::ios::in);
+        std::string line;
+        while (getline(f, line)) { //read data from file object and put it into string.
+
+            std::stringstream ss(line);
+            std::string token;
+            ChunkMetric *pM = nullptr;
+            int field = 0;
+            do {
+                std::getline(ss, token, ';');
+                if (!pM) {
+                    pM = new ChunkMetric(token, BSON_TYPE_INT64, 0);
+                } else {
+                    auto val = pM->getValues();
+                    val[field++] = atol(token.c_str());
+                }
+
+            } while (field < 300);
+            metrics->emplace_back(pM);
+        }
+        f.close();
+
+        return metrics->size();
+    }
+
 
     void OpenFile( const char *file ) {
         // Create parser
@@ -86,10 +89,10 @@ BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
         // Create parser
         auto *parser = new FTDCParser();
 
-            auto file_path = std::filesystem::current_path();
-            file_path.append(DATA_FILE_NAMES[0]);
-            BOOST_TEST_MESSAGE(file_path);
-            auto reader = parser->open(file_path);
+        auto file_path = std::filesystem::current_path();
+        file_path.append(DATA_FILE_NAMES[0]);
+        BOOST_TEST_MESSAGE(file_path);
+        auto reader = parser->open(file_path);
         BOOST_CHECK(reader);
 
         auto pBsonChunk = bson_reader_read(reader, 0);
@@ -314,8 +317,10 @@ BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
         int brokenMetrics = 0;
         for (int i = 0; i < readMetrics.size(); ++i) {
             auto pMetric = pChunk->getMetric(i);
-            BOOST_TEST_MESSAGE(str(boost::format("metric %1% name: %2%") % i % pMetric->getName() ));
             auto pMetricsFromCSV = readMetrics[i];
+            BOOST_TEST_MESSAGE(str(boost::format("metric %1% name: %2% / %3%")
+            % i % pMetric->getName() % pMetricsFromCSV->getName()));
+
 
             for (int j = 0; j < metricsCount; ++j) {
 
@@ -328,8 +333,9 @@ BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
                             % pMetric->getName().c_str() % i % j % std::abs((long) (diff)) % pMetric->getValue(j) %
                             pMetricsFromCSV->getValue(j));
 
-                    ++brokenMetrics;
+
                     BOOST_TEST_MESSAGE(errs);
+                    ++brokenMetrics;
                     break;
                 }
             }

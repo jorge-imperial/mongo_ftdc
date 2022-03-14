@@ -44,8 +44,8 @@ public:
     ChunkMetric *getMetric(int metricNumber) { return metrics[metricNumber]; };
     size_t getMetric(const std::string metricName, uint64_t *data)  {
         for ( auto &m : metrics) {
-            if (m->name == metricName) {
-                memcpy(data, m->values, (deltasInChunk+1)*sizeof(uint64_t));
+            if (m->getName() == metricName) {
+                memcpy(data, m->getValues(), (deltasInChunk+1)*sizeof(uint64_t));
                 return deltasInChunk;
             }
         }
@@ -53,8 +53,8 @@ public:
     }
     uint64_t *getMetric(const std::string metricName) {
         for ( auto &m : metrics) {
-            if (m->name == metricName)
-                return m->values;
+            if (m->getName() == metricName)
+                return m->getValues();
         }
         return 0;
     }

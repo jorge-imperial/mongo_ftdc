@@ -3,7 +3,9 @@ project(Boost_Tests_run)
 find_package (Boost REQUIRED COMPONENTS unit_test_framework)
 
 add_executable (${PROJECT_NAME}
+
         basic_tests.cpp
+        parsing_test.cpp
 
         ${CMAKE_SOURCE_DIR}/src/Dataset.cpp
         ${CMAKE_SOURCE_DIR}/src/ParserTask.cpp
@@ -25,7 +27,7 @@ add_executable (${PROJECT_NAME}
         ${CMAKE_SOURCE_DIR}/src/include/CSVWriter.h
         ${CMAKE_SOURCE_DIR}/src/CSVWriter.cpp
         ${CMAKE_SOURCE_DIR}/src/include/Timestamp.h
-        )
+       )
 
 target_include_directories (${PROJECT_NAME}  PUBLIC
         ${Boost_INCLUDE_DIRS}

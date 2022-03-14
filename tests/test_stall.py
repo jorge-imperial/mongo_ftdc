@@ -1,7 +1,6 @@
 import json
 import numpy as np
 
-
 ftdc_metrics_keys = (
     "start",
     # When starting with @ apply a rated differential
@@ -114,15 +113,15 @@ def pyftdc_pull_numpy_vectors(filepath, ftdc_metrics_keys, padZeros=False, t0=-1
     ts = p.get_timestamps()
 
     L = len(ts)
-    #np_ftdc_data = p.get_metrics_list_numpy(
+    # np_ftdc_data = p.get_metrics_list_numpy(
     #    keys_to_fetch,
     #    start = ts[int(L/2)-int(L/5)],
     #    end = ts[int(L/2)+int(L/5)])
 
     np_ftdc_data = p.get_metrics_list_numpy_matrix(
         keys_to_fetch,
-        start=ts[int(L/2)-int(L/5)],
-        end=ts[int(L/2)+int(L/5)],
+        start=ts[int(L / 2) - int(L / 5)],
+        end=ts[int(L / 2) + int(L / 5)],
         transpose=True
     )
 
@@ -131,7 +130,7 @@ def pyftdc_pull_numpy_vectors(filepath, ftdc_metrics_keys, padZeros=False, t0=-1
     for md in p.metadata:
         h = json.loads(md)
         if 'doc' in h.keys():
-            #kk = h['doc'].keys()
+            # kk = h['doc'].keys()
             # for c in range(len(kk)):
             #    h['doc'][c] = join_str.join(list(k[c]))
             m.append(h['doc'])
@@ -151,10 +150,23 @@ def pyftdc_pull_numpy_vectors(filepath, ftdc_metrics_keys, padZeros=False, t0=-1
 
 
 def test_stall():
+    import pyftdc
+    import pymongo
 
-    file = '/home/jorge/CLionProjects/mongo_ftdc/tests/diagnostic.data_40/metrics.2021-07-22T17-16-31Z-00000'
-    v = pyftdc_pull_numpy_vectors(file, ftdc_metrics_keys)
+    # file = '/home/jorge/CLionProjects/mongo_ftdc/tests/diagnostic.data_40/metrics.2021-07-22T17-16-31Z-00000'
+    # v = pyftdc_pull_numpy_vectors(file, ftdc_metrics_keys)
 
-    print("done")
+    file = '/home/jorge/CLionProjects/mongo_ftdc/tests/metrics.4.4SERVER-51281onset.bson'
+    parser = pyftdc.FTDCParser()
+    status = parser.parse_file(file)
+    assert status == 0
 
+    ts_start = 1601561706000
+    ts_end = 1601563537000
 
+    #fetched_ftdc_keys_np = np.array(parser.metric_names, dtype=object)
+    timestamps = parser.get_metric('start', ts_start, ts_end, False)
+    all_available_ftdc_keys = np.array(parser.metric_names, dtype=object)
+
+    fi = p.get_parsed_file_info()
+    print('done')

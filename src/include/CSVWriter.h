@@ -17,4 +17,3 @@ public:
 };
 
 #endif //FTDCPARSER_CSVWRITER_H
-
