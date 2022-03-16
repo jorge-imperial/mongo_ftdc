@@ -3,7 +3,7 @@
 //
 
 #define BOOST_TEST_MAIN  // in only one cpp file
-#define BOOST_TEST_MODULE ftdc_basic_suite
+//#define BOOST_TEST_MODULE ftdc_basic_suite
 #include <boost/test/unit_test.hpp>
 
 
