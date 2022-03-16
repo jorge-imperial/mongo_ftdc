@@ -16,6 +16,7 @@ MESSAGE( "---------------------- pyftdc version: " ${file_version}  "-----------
 project(pyftdc VERSION ${file_version})
 
 if(SKBUILD)
+  MESSAGE("Using skbuild")
   # Scikit-Build does not add your site-packages to the search path automatically,
   # so we need to add it _or_ the pybind11 specific directory here.
   execute_process(
@@ -25,6 +26,8 @@ if(SKBUILD)
           OUTPUT_VARIABLE _tmp_dir
           OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ECHO STDOUT)
   list(APPEND CMAKE_PREFIX_PATH "${_tmp_dir}")
+else()
+   MESSAGE("Not using SKBuild")
 endif()
 
 # Now we can find pybind11

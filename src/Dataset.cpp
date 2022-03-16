@@ -41,12 +41,16 @@ Dataset::addChunk(Chunk *pChunk) {
 
     // Critical section
     mu.lock();
+
+    //
     chunkVector.emplace_back(pChunk);
 
     // total size of samplesInDataset
     samplesInDataset += pChunk->getSamplesCount();
 
     // Append metrics here.
+
+    //
     mu.unlock();
 }
 
