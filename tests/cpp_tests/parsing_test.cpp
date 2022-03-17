@@ -2,8 +2,9 @@
 // Created by jorge on 3/13/22.
 //
 
-#include <boost/test/included/unit_test.hpp>
-#include <boost/test/unit_test_log.hpp>
+#include <boost/test/tools/old/interface.hpp>
+#include <boost/test/unit_test_suite.hpp>
+#include <boost/test/unit_test.hpp>
 
 #include <boost/format.hpp>
 
@@ -15,8 +16,8 @@
 #include <boost/thread.hpp>
 
 #include <filesystem>
+#include <fstream>
 
-//#include <boost/test/tools/old/interface.hpp>
 
 static const char *DATA_FILE_NAMES[] = { "./cpp_tests/metrics.3.6.17.ftdc",
                                          "./cpp_tests/metrics.4.0.26.ftdc",
@@ -30,42 +31,30 @@ static const char *CSV_FILE_NAMES[] = { "./cpp_tests/metrics.3.6.17.csv",
                                         "./cpp_tests/metrics.4.4.12.csv",
                                         "./cpp_tests/metrics.5.0.2.csv",
                                         NULL };
-size_t readMetricsFromCSV(std::string csvTestFile, std::vector<ChunkMetric *> * metrics) {
-
-    metrics->clear();
-    metrics->reserve(2000);
-
-    //
-    std::ifstream f;
-    f.open(csvTestFile, std::ios::in);
-    std::string line;
-    while (getline(f, line)) { //read data from file object and put it into string.
-
-        std::stringstream ss(line);
-        std::string token;
-        ChunkMetric *pM = nullptr;
-        int field = 0;
-        do {
-            std::getline(ss, token, ';');
-            if (!pM) {
-                pM = new ChunkMetric(token, BSON_TYPE_INT64, 0);
-            } else {
-                auto val = pM->getValues();
-                val[field++] = atol(token.c_str());
-            }
-
-        } while (field < 300);
-        metrics->emplace_back(pM);
-    }
-    f.close();
-
-    return metrics->size();
-}
 
 int ParserTaskConsumerThread(ParserTasksList *parserTasks, Dataset *dataSet);
+size_t ReadMetricsFromCSV(std::string csvTestFile, std::vector<ChunkMetric *> * metrics);
 
-BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
 
+struct TestFixtureParsing {
+
+    TestFixtureParsing() {
+        ;
+    }
+
+    ~TestFixtureParsing() {
+        ;
+    }
+
+    void TestFixtureSetup() {
+        BOOST_CHECK(true);
+    }
+
+};
+
+BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
+
+    BOOST_AUTO_TEST_SUITE(ParsingSuite)
 
     void OpenFile( const char *file ) {
         // Create parser
@@ -161,7 +150,6 @@ BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
         BOOST_CHECK_EQUAL(1, 1);
     }
 
-
     void CheckMetricNames(const char *file) {
         // Create parser
         auto parser = new FTDCParser();
@@ -246,7 +234,6 @@ BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
         delete parser;
     }
 
-
     void CompareMetrics(const char *dataFile, const char *csvFile) {
         // Create parser
         auto parser = new FTDCParser();
@@ -311,7 +298,7 @@ BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
         BOOST_CHECK_EQUAL(metrics, pChunk->getMetricsCount());
 
         std::vector<ChunkMetric*> readMetrics;
-        auto metricsCount = readMetricsFromCSV(CSV_FILE_NAMES[0], &readMetrics);
+        auto metricsCount = ReadMetricsFromCSV(CSV_FILE_NAMES[0], &readMetrics);
 
         int brokenMetrics = 0;
         for (int i = 0; i < readMetrics.size(); ++i) {
@@ -346,7 +333,6 @@ BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
         bson_reader_destroy(reader);
     }
 
-
     BOOST_AUTO_TEST_CASE(test_OpenFile) {
 
         for (int n=0; DATA_FILE_NAMES[n] != NULL; ++n)
@@ -358,7 +344,6 @@ BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
             ReadInfoChunk(DATA_FILE_NAMES[n]);
     }
 
-
     BOOST_AUTO_TEST_CASE(test_ReadDataChunk) {
         for (int n=0;  DATA_FILE_NAMES[n] != NULL; ++n)
             ReadDataChunk(DATA_FILE_NAMES[n]);
@@ -369,9 +354,10 @@ BOOST_AUTO_TEST_SUITE(ftdc_parsing_suite)
             CheckMetricNames(DATA_FILE_NAMES[n]);
     }
 
-
     BOOST_AUTO_TEST_CASE(test_compareMetrics) {
         for (int n=0;  DATA_FILE_NAMES[n] != NULL; ++n)
             CompareMetrics(DATA_FILE_NAMES[n], CSV_FILE_NAMES[n]);
     }
 }
+
+BOOST_AUTO_TEST_SUITE_END();

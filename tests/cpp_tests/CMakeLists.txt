@@ -26,7 +26,8 @@ add_executable (${PROJECT_NAME}
 
         basic_tests.cpp
         parsing_test.cpp
-        dataset_tests.cpp)
+        dataset_tests.cpp
+        read_csv.cpp)
 
 target_include_directories (${PROJECT_NAME}  PUBLIC
         ${Boost_INCLUDE_DIRS}
