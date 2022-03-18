@@ -7,16 +7,13 @@
 #include <boost/test/unit_test.hpp>
 
 #include <boost/format.hpp>
-
+#include <boost/thread.hpp>
 
 #include <FTDCParser.h>
 #include <Chunk.h>
 #include <iostream>
 
-#include <boost/thread.hpp>
-
 #include <filesystem>
-#include <fstream>
 
 
 static const char *DATA_FILE_NAMES[] = { "./cpp_tests/metrics.3.6.17.ftdc",

@@ -1,8 +1,13 @@
 project(Boost_Tests_run)
 
+set (Boost_USE_STATIC_LIBS OFF)
 find_package (Boost REQUIRED COMPONENTS unit_test_framework)
+include_directories (${Boost_INCLUDE_DIRS})
 
-add_executable (${PROJECT_NAME}
+
+add_executable (
+        ${PROJECT_NAME}
+
         ${CMAKE_SOURCE_DIR}/src/Dataset.cpp
         ${CMAKE_SOURCE_DIR}/src/ParserTask.cpp
         ${CMAKE_SOURCE_DIR}/src/Chunk.cpp
@@ -14,7 +19,6 @@ add_executable (${PROJECT_NAME}
         ${CMAKE_SOURCE_DIR}/src/include/SampleLocation.h
         ${CMAKE_SOURCE_DIR}/src/include/Timestamp.h
         ${CMAKE_SOURCE_DIR}/src/include/Metrics.h
-
         ${CMAKE_SOURCE_DIR}/src/WriterTaskList.cpp
         ${CMAKE_SOURCE_DIR}/src/include/WriterTaskList.h
         ${CMAKE_SOURCE_DIR}/src/WriterTask.cpp
@@ -26,7 +30,7 @@ add_executable (${PROJECT_NAME}
 
         basic_tests.cpp
         parsing_test.cpp
-        dataset_tests.cpp
+        dataset_test.cpp
         read_csv.cpp)
 
 target_include_directories (${PROJECT_NAME}  PUBLIC

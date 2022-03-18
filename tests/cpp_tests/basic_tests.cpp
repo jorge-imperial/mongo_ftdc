@@ -1,7 +1,7 @@
 //
 // Created by jorge on 12/25/20.
 //
-
+#define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE "Basic tests"
 #include <boost/test/unit_test.hpp>
 
