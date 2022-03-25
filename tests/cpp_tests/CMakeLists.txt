@@ -43,12 +43,13 @@ target_include_directories (${PROJECT_NAME}  PUBLIC
 
 target_link_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR}/../../src/mongo-c-driver/src/libbson
+        /usr/local/lib
 )
 
 target_link_libraries (${PROJECT_NAME}
         ${Boost_LIBRARIES}
         Boost::log
         bson-static-1.0.a
-        libwiredtiger.so
+        wiredtiger
 )
 
