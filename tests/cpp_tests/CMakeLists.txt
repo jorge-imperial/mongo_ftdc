@@ -30,7 +30,7 @@ add_executable (
 
         basic_tests.cpp
         parsing_test.cpp
-        dataset_test.cpp
+        #dataset_test.cpp
         read_csv.cpp)
 
 target_include_directories (${PROJECT_NAME}  PUBLIC
@@ -49,5 +49,6 @@ target_link_libraries (${PROJECT_NAME}
         ${Boost_LIBRARIES}
         Boost::log
         bson-static-1.0.a
+        libwiredtiger.so
 )
 

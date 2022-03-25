@@ -14,6 +14,7 @@
 #include <iostream>
 
 #include <filesystem>
+#include <wiredtiger.h>
 
 
 static const char *DATA_FILE_NAMES[] = { "./cpp_tests/metrics.3.6.17.ftdc",
@@ -231,6 +232,27 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         delete parser;
     }
 
+    BOOST_AUTO_TEST_CASE(test_Parser_OpenFile) {
+
+        for (int n=0; DATA_FILE_NAMES[n] != NULL; ++n)
+           OpenFile(DATA_FILE_NAMES[n]);
+    }
+
+    BOOST_AUTO_TEST_CASE(test_Parser_ReadInfoChunk) {
+        for (int n=0;  DATA_FILE_NAMES[n] != NULL; ++n)
+            ReadInfoChunk(DATA_FILE_NAMES[n]);
+    }
+
+    BOOST_AUTO_TEST_CASE(test_Parser_ReadDataChunk) {
+        for (int n=0;  DATA_FILE_NAMES[n] != NULL; ++n)
+            ReadDataChunk(DATA_FILE_NAMES[n]);
+    }
+
+    BOOST_AUTO_TEST_CASE(test_Parser_CheckMetricNames) {
+        for (int n=0;  DATA_FILE_NAMES[n] != NULL; ++n)
+            CheckMetricNames(DATA_FILE_NAMES[n]);
+    }
+
     void CompareMetrics(const char *dataFile, const char *csvFile) {
         // Create parser
         auto parser = new FTDCParser();
@@ -330,31 +352,62 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         bson_reader_destroy(reader);
     }
 
-    BOOST_AUTO_TEST_CASE(test_OpenFile) {
 
-        for (int n=0; DATA_FILE_NAMES[n] != NULL; ++n)
-           OpenFile(DATA_FILE_NAMES[n]);
-    }
-
-    BOOST_AUTO_TEST_CASE(test_ReadInfoChunk) {
-        for (int n=0;  DATA_FILE_NAMES[n] != NULL; ++n)
-            ReadInfoChunk(DATA_FILE_NAMES[n]);
-    }
-
-    BOOST_AUTO_TEST_CASE(test_ReadDataChunk) {
-        for (int n=0;  DATA_FILE_NAMES[n] != NULL; ++n)
-            ReadDataChunk(DATA_FILE_NAMES[n]);
-    }
-
-    BOOST_AUTO_TEST_CASE(test_checkMetricNames) {
-        for (int n=0;  DATA_FILE_NAMES[n] != NULL; ++n)
-            CheckMetricNames(DATA_FILE_NAMES[n]);
-    }
-
-    BOOST_AUTO_TEST_CASE(test_compareMetrics) {
+    BOOST_AUTO_TEST_CASE(test_Parser_compareMetrics) {
         for (int n=0;  DATA_FILE_NAMES[n] != NULL; ++n)
             CompareMetrics(DATA_FILE_NAMES[n], CSV_FILE_NAMES[n]);
     }
-}
+
+
+    // TODO: These should be moved to their own suite
+
+        void
+        make_work_dir(const char *dir){
+
+        }
+
+        const char *
+        WTTestSetup(char *const *dir) {
+            const char *home;
+
+            /*
+             * Create a clean test directory for this run of the test program if the environment variable
+             * isn't already set (as is done by make check).
+             */
+            if ((home = getenv("WIREDTIGER_HOME")) == NULL)
+                home = reinterpret_cast<const char *>(dir);
+
+            make_work_dir(home);
+            return (home);
+        }
+
+        BOOST_AUTO_TEST_CASE(test_wt_Open) {
+
+            WT_CONNECTION *conn;
+            WT_SESSION *session;
+            static const char *home;
+            home = WTTestSetup(reinterpret_cast<char *const *>("./wt"));
+
+            // Open a connection to the database, creating it if necessary.
+            wiredtiger_open(home, NULL, "create", &conn);
+
+            BOOST_CHECK(conn);
+
+            // Open a session for the current thread's work.
+            conn->open_session(conn, NULL, NULL, &session);
+
+            // Note: closing the connection implicitly closes open session(s).
+            auto close = conn->close(conn, NULL);
+            
+        }
+    }
+
+
+
+
+
+
 
 BOOST_AUTO_TEST_SUITE_END();
+
+
