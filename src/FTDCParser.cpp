@@ -313,3 +313,72 @@ void FTDCParser::setVerbose(bool verbosity) {
             logging::core::get()->set_filter(logging::trivial::severity >  logging::trivial::info);verbose = verbosity;
 }
 
+
+/*
+ * Create the metrics table. Keys are timestamps.
+ *
+ * table=hostname_port ; use the host name and port as the name of the table
+ * access_pattern_hint=sequential  ; This is the usual case for our application
+ * key_format:u  ; Timestamps are keys, and we store them as 64 bit unsigned integers
+ * value_format: uuu... ; Because we also store 64 bit unsigned integers
+ * columns: timestamp,name,name,...  ; These are the names of the columns
+ * colgroups=() ; Not sure if to use them yet
+ * block_compressor=lz4 ; minimize space on disk
+ */
+std::string FTDCParser::CreateWTConfigString() {
+
+    std::string configString;
+
+    configString = "table=metric";
+    configString += ",access_pattern_hint=sequential";
+    configString += ",key_format:u";
+    // Separate metrics in groups
+    auto metricNames = getMetricsNames();
+    std::map<std::string, std::vector<std::string>*> groups;
+
+    std::string columns="timestamp";
+    std::string format="u";
+    for (auto &metricName : metricNames) {
+
+        // Is this a group name?
+        auto groupName = groupNameFromMetricName(metricName);
+        if (!groupName.empty()) {
+
+            // substitute spaces by underscores in metric name.
+            std::replace(metricName.begin(), metricName.end(), ' ', '_');
+
+            // Does the group exist?
+            auto it = groups.find(groupName);
+            if (it == groups.end()) {
+                auto metrics = new std::vector<std::string>;
+                metrics->emplace_back(metricName);
+                groups.emplace(groupName, metrics); // new group
+            }
+            else {
+                it->second->emplace_back(metricName);
+            }
+            columns += ","+metricName;
+            format += "u";
+        }
+
+    }
+    configString += ",columns=" + columns;
+    //configString += ",value_format=" + format;
+    configString += "block_compressor=lz4";
+
+    return configString;
+
+}
+
+std::string FTDCParser::groupNameFromMetricName(std::string metricName) {
+    // Metric names are separated by dots
+    std::istringstream iss(metricName);
+    std::vector<std::string> tokens;
+    std::string token;
+    while (std::getline(iss, token, '.')) {
+        if (!token.empty())
+            tokens.push_back(token);
+    }
+    return std::string(tokens[0]);
+}
+

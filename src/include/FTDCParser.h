@@ -57,11 +57,15 @@ public:
     // For testing.
     Dataset* getDataset() { return &dataSet; }
 
+    std::string CreateWTConfigString();
+
 private:
     ParserTasksList parserTasks;
     Dataset dataSet;
     std::vector<std::string> metadata;
     bool verbose = false;
+
+    std::string groupNameFromMetricName(std::string metricName);
 };
 
 

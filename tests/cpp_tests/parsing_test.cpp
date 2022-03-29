@@ -109,7 +109,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         file_path.append(file);
         BOOST_TEST_MESSAGE(file_path);
 
-        auto reader = parser->open(file_path);
+        bson_reader_t  *reader = parser->open(file_path);
         BOOST_CHECK_NE(reader, nullptr);
 
         bson_reader_destroy(reader);
@@ -124,10 +124,10 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         auto file_path = std::filesystem::current_path();
         file_path.append(DATA_FILE_NAMES[0]);
         BOOST_TEST_MESSAGE(file_path);
-        auto reader = parser->open(file_path);
+        bson_reader_t  *reader = parser->open(file_path);
         BOOST_CHECK(reader);
 
-        auto pBsonChunk = bson_reader_read(reader, 0);
+        const bson_t *pBsonChunk = bson_reader_read(reader, 0);
 
         parser->parseInfoChunk(pBsonChunk);
 
@@ -137,14 +137,13 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
     }
 
     void ReadDataChunk(const char *file) {
-
         // Create parser
         auto parser = new FTDCParser();
 
-        auto reader = parser->open(file);
+        bson_reader_t  *reader = parser->open(file);
         BOOST_CHECK(reader);
 
-        auto pBsonChunk = bson_reader_read(reader, 0);
+        const bson_t * pBsonChunk = bson_reader_read(reader, 0);
 
         parser->parseInfoChunk(pBsonChunk);
 
@@ -199,10 +198,10 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         // Create parser
         auto parser = new FTDCParser();
 
-        auto reader = parser->open(file);
+        bson_reader_t  *reader = parser->open(file);
         BOOST_CHECK(reader);
 
-        auto pBsonChunk = bson_reader_read(reader, 0);
+        const bson_t *pBsonChunk = bson_reader_read(reader, 0);
 
         parser->parseInfoChunk(pBsonChunk);
 
@@ -226,7 +225,6 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
                     uint8_t *bin_data = new uint8_t[bin_size];
                     memcpy(bin_data, data, bin_size);
                     parserTasks.push(bin_data, bin_size, id);
-
                     break;
 
                 } else if (BSON_ITER_HOLDS_DATE_TIME(&iter)) {
@@ -304,10 +302,10 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         // Create parser
         auto parser = new FTDCParser();
 
-        auto reader = parser->open(DATA_FILE_NAMES[0]);
+        bson_reader_t *reader  = parser->open(DATA_FILE_NAMES[0]);
         BOOST_CHECK(reader);
 
-        auto pBsonChunk = bson_reader_read(reader, 0);
+        const bson_t * pBsonChunk = bson_reader_read(reader, 0);
 
 
         parser->parseInfoChunk(pBsonChunk);
@@ -427,6 +425,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         WT_SESSION *session;
         const char *key, *value;
 
+        // WT
         std::string path;
         CreateDirectoryIfNotPresent("wt", path);
 
@@ -483,86 +482,104 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
             {"", 0, 0}
     };
 
-    BOOST_AUTO_TEST_CASE(test_wt_WriteDocs) {
-            POP_RECORD *p;
-            WT_CONNECTION *conn;
-            WT_CURSOR *country_cursor, *country_cursor2, *cursor, *join_cursor, *stat_cursor,
-                    *subjoin_cursor, *year_cursor;
-            WT_SESSION *session;
-            const char *country;
+    std::string CreateNameList(std::vector<std::string> group) {
+
+        if (group.size() == 0) return "";
+
+        std::string ret = group[0];
+        for (int n=1;n<group.size(); ++n) {
+            ret += ",";
+            ret += group[n];
+        }
+        return ret;
+    }
+
+    BOOST_AUTO_TEST_CASE(test_wt_WriteDocs)
+    {
+            POP_RECORD *p = nullptr;
+            WT_CONNECTION *conn = nullptr;
+            WT_CURSOR *country_cursor,
+                      *country_cursor2,
+                      *cursor,
+                      *join_cursor,
+                      *stat_cursor,
+                      *subjoin_cursor,
+                      *year_cursor;
+            WT_SESSION *session = nullptr;
+            const char *country = nullptr;
             uint64_t recno, population;
             uint16_t year;
 
+            // Create parser
+            auto parser = new FTDCParser();
+            parser->parseFiles(DATA_FILE_NAMES[4]);
+
             std::string home;
-            CreateDirectoryIfNotPresent("wt", home);
+            CreateDirectoryIfNotPresent("parsed", home);
 
             auto ret = wiredtiger_open(home.c_str(), nullptr, "create,statistics=(fast)", &conn);
             BOOST_CHECK_EQUAL(ret ,0);
 
             ret = conn->open_session(conn, nullptr, nullptr, &session);
-            /*
-             * Create the population table. Keys are record numbers, the format for values is (5-byte
-             * string, uint16_t, uint64_t). See ::wiredtiger_struct_pack for details of the format strings.
-             */
-            ret = session->create(session, "table:poptable",
-                                        "key_format=r,value_format=5sHQ,columns=(id,country,year,population),colgroups=(main,"
-                                        "population)");
+
+            std::string configStringWT = parser->CreateWTConfigString();
+
+            ret = session->create(session,  "table:metrics",  configStringWT.c_str());
             /*
              * Create two column groups: a primary column group with the country code, year and population
              * (named "main"), and a population column group with the population by itself (named
              * "population").
              */
-            ret = session->create(session, "colgroup:poptable:main", "columns=(country,year,population)");
-            ret = session->create(session, "colgroup:poptable:population", "columns=(population)");
+            ret = session->create(session, "colgroup:metrics:main", "columns=(country,year,population)");
+            ret = session->create(session, "colgroup:metrics:population", "columns=(population)");
+
             // Create an index with a simple key.
-            ret = (session->create(session, "index:poptable:country", "columns=(country)"));
+            ret = (session->create(session, "index:metrics:country", "columns=(country)"));
             // Create an index with a composite key (country,year).
-            ret = (
-                    session->create(session, "index:poptable:country_plus_year", "columns=(country,year)"));
+            ret = (session->create(session, "index:metrics:country_plus_year", "columns=(country,year)"));
             // Create an immutable index.
-            ret = (
-                    session->create(session, "index:poptable:immutable_year", "columns=(year),immutable"));
+            ret = (session->create(session, "index:metrics:immutable_year", "columns=(year),immutable"));
+
             // Insert the records into the table.
-            ret = (session->open_cursor(session, "table:poptable", nullptr, "append", &cursor));
-
-
+            ret = (session->open_cursor(session, "table:metrics", nullptr, "append", &cursor));
             for (p = pop_data; p->year != 0; p++) {
                 cursor->set_value(cursor, p->country, p->year, p->population);
-                ret = (cursor->insert(cursor));
+                ret = cursor->insert(cursor);
             }
-            ret = (cursor->close(cursor));
+            ret = cursor->close(cursor);
+
             // Update records in the table.
-            ret = (session->open_cursor(session, "table:poptable", nullptr, nullptr, &cursor));
+            ret = session->open_cursor(session, "table:metrics", nullptr, nullptr, &cursor);
             while ((ret = cursor->next(cursor)) == 0) {
-                ret = (cursor->get_key(cursor, &recno));
-                ret = (cursor->get_value(cursor, &country, &year, &population));
+                ret = cursor->get_key(cursor, &recno);
+                ret = cursor->get_value(cursor, &country, &year, &population);
                 cursor->set_value(cursor, country, year, population + 1);
-                ret = (cursor->update(cursor));
+                ret = cursor->update(cursor);
             }
             BOOST_CHECK_EQUAL(ret, WT_NOTFOUND);
 
-            ret = (cursor->close(cursor));
+            ret = cursor->close(cursor);
             // List the records in the table.
-            ret = (session->open_cursor(session, "table:poptable", nullptr, nullptr, &cursor));
+            ret = (session->open_cursor(session, "table:metrics", nullptr, nullptr, &cursor));
             while ((ret = cursor->next(cursor)) == 0) {
-                ret = (cursor->get_key(cursor, &recno));
-                ret = (cursor->get_value(cursor, &country, &year, &population));
+                ret = cursor->get_key(cursor, &recno);
+                ret = cursor->get_value(cursor, &country, &year, &population);
                 printf("ID %" PRIu64, recno);
-                printf(
-                        ": country %s, year %" PRIu16 ", population %" PRIu64 "\n", country, year, population);
+                printf( ": country %s, year %" PRIu16 ", population %" PRIu64 "\n", country, year, population);
             }
             BOOST_CHECK_EQUAL(ret, WT_NOTFOUND);
-            ret = (cursor->close(cursor));
+            ret = cursor->close(cursor);
+
             // List the records in the table using raw mode.
-            ret = (session->open_cursor(session, "table:poptable", nullptr, "raw", &cursor));
+            ret = session->open_cursor(session, "table:metrics", nullptr, "raw", &cursor);
             while ((ret = cursor->next(cursor)) == 0) {
                 WT_ITEM key, value;
-                ret = (cursor->get_key(cursor, &key));
-                ret = (wiredtiger_struct_unpack(session, key.data, key.size, "r", &recno));
+                ret = cursor->get_key(cursor, &key);
+                ret = wiredtiger_struct_unpack(session, key.data, key.size, "r", &recno);
                 printf("ID %" PRIu64, recno);
-                ret = (cursor->get_value(cursor, &value));
-                ret = (wiredtiger_struct_unpack(
-                        session, value.data, value.size, "5sHQ", &country, &year, &population));
+                ret = cursor->get_value(cursor, &value);
+                ret = wiredtiger_struct_unpack(
+                        session, value.data, value.size, "5sHQ", &country, &year, &population);
                 printf(
                         ": country %s, year %" PRIu16 ", population %" PRIu64 "\n", country, year, population);
             }
@@ -571,7 +588,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
             /*
              * Open a cursor on the main column group, and return the information for a particular country.
              */
-            ret = (session->open_cursor(session, "colgroup:poptable:main", nullptr, nullptr, &cursor));
+            ret = (session->open_cursor(session, "colgroup:metrics:main", nullptr, nullptr, &cursor));
             cursor->set_key(cursor, 2);
             ret = (cursor->search(cursor));
             ret = (cursor->get_value(cursor, &country, &year, &population));
@@ -582,14 +599,14 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
              * Open a cursor on the population column group, and return the population of a particular
              * country.
              */
-            ret = (session->open_cursor(session, "colgroup:poptable:population", nullptr, nullptr, &cursor));
+            ret = (session->open_cursor(session, "colgroup:metrics:population", nullptr, nullptr, &cursor));
             cursor->set_key(cursor, 2);
             ret = (cursor->search(cursor));
             ret = (cursor->get_value(cursor, &population));
             printf("ID 2: population %" PRIu64 "\n", population);
             ret = (cursor->close(cursor));
             // Search in a simple index
-            ret = (session->open_cursor(session, "index:poptable:country", nullptr, nullptr, &cursor));
+            ret = (session->open_cursor(session, "index:metrics:country", nullptr, nullptr, &cursor));
             cursor->set_key(cursor, "AU\0\0\0");
             ret = (cursor->search(cursor));
             ret = (cursor->get_value(cursor, &country, &year, &population));
@@ -597,7 +614,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
             ret = (cursor->close(cursor));
             // Search in a composite index.
             ret = (
-                    session->open_cursor(session, "index:poptable:country_plus_year", nullptr, nullptr, &cursor));
+                    session->open_cursor(session, "index:metrics:country_plus_year", nullptr, nullptr, &cursor));
             cursor->set_key(cursor, "USA\0\0", (uint16_t)1900);
             ret = (cursor->search(cursor));
             ret = (cursor->get_value(cursor, &country, &year, &population));
@@ -607,7 +624,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
             /*
              * Use a projection to return just the table's country and year columns.
              */
-            ret = (session->open_cursor(session, "table:poptable(country,year)", nullptr, nullptr, &cursor));
+            ret = (session->open_cursor(session, "table:metrics(country,year)", nullptr, nullptr, &cursor));
             while ((ret = cursor->next(cursor)) == 0) {
                 ret = (cursor->get_value(cursor, &country, &year));
                 printf("country %s, year %" PRIu16 "\n", country, year);
@@ -618,7 +635,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
              * Use a projection to return just the table's country and year columns, using raw mode.
              */
             ret = (
-                    session->open_cursor(session, "table:poptable(country,year)", nullptr, "raw", &cursor));
+                    session->open_cursor(session, "table:metrics(country,year)", nullptr, "raw", &cursor));
             while ((ret = cursor->next(cursor)) == 0) {
                 WT_ITEM value;
                 ret = (cursor->get_value(cursor, &value));
@@ -632,7 +649,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
              * Use a projection to return just the table's record number key from an index.
              */
             ret = (
-                    session->open_cursor(session, "index:poptable:country_plus_year(id)", nullptr, nullptr, &cursor));
+                    session->open_cursor(session, "index:metrics:country_plus_year(id)", nullptr, nullptr, &cursor));
             while ((ret = cursor->next(cursor)) == 0) {
                 ret = (cursor->get_key(cursor, &country, &year));
                 ret = (cursor->get_value(cursor, &recno));
@@ -644,7 +661,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
              * Use a projection to return just the population column from an index.
              */
             ret = (session->open_cursor(
-                    session, "index:poptable:country_plus_year(population)", nullptr, nullptr, &cursor));
+                    session, "index:metrics:country_plus_year(population)", nullptr, nullptr, &cursor));
             while ((ret = cursor->next(cursor)) == 0) {
                 ret = (cursor->get_key(cursor, &country, &year));
                 ret = (cursor->get_value(cursor, &population));
@@ -657,7 +674,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
              * empty list of value columns.
              */
             ret = (
-                    session->open_cursor(session, "index:poptable:country_plus_year()", nullptr, nullptr, &cursor));
+                    session->open_cursor(session, "index:metrics:country_plus_year()", nullptr, nullptr, &cursor));
             while ((ret = cursor->next(cursor)) == 0) {
                 ret = (cursor->get_key(cursor, &country, &year));
                 printf("country %s, year %" PRIu16 "\n", country, year);
@@ -665,11 +682,11 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
             BOOST_CHECK_EQUAL(ret, WT_NOTFOUND);
             ret = (cursor->close(cursor));
             // Open cursors needed by the join.
-            ret = (session->open_cursor(session, "join:table:poptable", nullptr, nullptr, &join_cursor));
+            ret = (session->open_cursor(session, "join:table:metrics", nullptr, nullptr, &join_cursor));
             ret = (
-                    session->open_cursor(session, "index:poptable:country", nullptr, nullptr, &country_cursor));
+                    session->open_cursor(session, "index:metrics:country", nullptr, nullptr, &country_cursor));
             ret = (
-                    session->open_cursor(session, "index:poptable:immutable_year", nullptr, nullptr, &year_cursor));
+                    session->open_cursor(session, "index:metrics:immutable_year", nullptr, nullptr, &year_cursor));
             // select values WHERE country == "AU" AND year > 1900
             country_cursor->set_key(country_cursor, "AU\0\0\0");
             ret = (country_cursor->search(country_cursor));
@@ -693,14 +710,14 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
             ret = (year_cursor->close(year_cursor));
             ret = (country_cursor->close(country_cursor));
             // Open cursors needed by the join.
-            ret = (session->open_cursor(session, "join:table:poptable", nullptr, nullptr, &join_cursor));
-            ret = (session->open_cursor(session, "join:table:poptable", nullptr, nullptr, &subjoin_cursor));
+            ret = (session->open_cursor(session, "join:table:metrics", nullptr, nullptr, &join_cursor));
+            ret = (session->open_cursor(session, "join:table:metrics", nullptr, nullptr, &subjoin_cursor));
             ret = (
-                    session->open_cursor(session, "index:poptable:country", nullptr, nullptr, &country_cursor));
+                    session->open_cursor(session, "index:metrics:country", nullptr, nullptr, &country_cursor));
             ret = (
-                    session->open_cursor(session, "index:poptable:country", nullptr, nullptr, &country_cursor2));
+                    session->open_cursor(session, "index:metrics:country", nullptr, nullptr, &country_cursor2));
             ret = (
-                    session->open_cursor(session, "index:poptable:immutable_year", nullptr, nullptr, &year_cursor));
+                    session->open_cursor(session, "index:metrics:immutable_year", nullptr, nullptr, &year_cursor));
             /*
              * select values WHERE (country == "AU" OR country == "UK")
              *                     AND year > 1900
