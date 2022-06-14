@@ -105,20 +105,12 @@ FTDCParser::open(std::string file_path) {
     return reader;
 }
 
-int
-FTDCParser::parseFiles(std::string file_paths, const bool onlyMetadata, const bool onlyMetricNames, const bool lazyParsing) {
-    std::vector<std::string> vector_files;
-
-    boost::split(vector_files, file_paths, boost::is_any_of(","));
-
-    auto ret = parseFiles(vector_files, onlyMetadata, onlyMetricNames, lazyParsing);
-    return ret;
-}
-
 
 int
 FTDCParser::parseFiles(std::vector<std::string> filePaths,
-                       const bool onlyMetadata, const bool onlyMetricNames, const bool lazyParsing) {
+                       const bool onlyMetadata,
+                       const bool onlyMetricNames,
+                       const bool lazyParsing) {
     bson_reader_t *reader;
     const bson_t *pBsonChunk;
 
@@ -127,6 +119,8 @@ FTDCParser::parseFiles(std::vector<std::string> filePaths,
     namespace logging = boost::log;
 
     std::sort( filePaths.begin(), filePaths.end());
+
+    dataSet.setLazyParsingFlag(lazyParsing);
 
     for (auto fileName : filePaths) {
         BOOST_LOG_TRIVIAL(info) << "File: " << fileName;
@@ -184,8 +178,6 @@ FTDCParser::parseFiles(std::vector<std::string> filePaths,
             ++chunkCount;
         }
 
-        if (lazyParsing)  dataSet.setLazyParsingFlag();
-
         // Thread pool
         size_t numThreads = boost::thread::hardware_concurrency();
         boost::thread_group threads;
@@ -194,6 +186,7 @@ FTDCParser::parseFiles(std::vector<std::string> filePaths,
 
         // Wait for threads to finish
         threads.join_all();
+
 
         dataSet.sortChunks();
 
@@ -204,7 +197,11 @@ FTDCParser::parseFiles(std::vector<std::string> filePaths,
         date_time_delta = BSON_MAX ((double) (date_time_after - date_time_before), 0.000001);
 
         // This is the end of a file being parsed.
-        dataSet.FileParsed(fileName, first_id, current_id, chunkCount);
+        dataSet.finishedParsingFile(fileName, first_id, current_id, chunkCount);
+
+        //
+
+
 
         BOOST_LOG_TRIVIAL(info) << "File parsed in " << date_time_delta
                  << " secs. There are " << dataSet.getChunkCount() << " chunks, "
@@ -282,7 +279,7 @@ size_t
 FTDCParser::dumpDocsAsJsonTimestamps(const std::string  inputFile, const std::string  outputFile,
                                      const Timestamp start, const Timestamp end) {
 
-    if (!parseFiles(inputFile, false, false, false)) {
+    if (!parseFile(inputFile, false, false, false)) {
 
         JSONWriter w;
         return  w.dumpTimestamps( &dataSet, outputFile, start, end, false);
@@ -295,7 +292,7 @@ FTDCParser::dumpDocsAsJsonTimestamps(const std::string  inputFile, const std::st
 size_t
 FTDCParser::dumpDocsAsCsvTimestamps(std::string inputFile, std::string outputFile, Timestamp start, Timestamp end) {
 
-    if (!parseFiles(std::move(inputFile), false, false, false)) {
+    if (!parseFile(std::move(inputFile), false, false, false)) {
 
         CSVWriter c;
 
@@ -313,72 +310,12 @@ void FTDCParser::setVerbose(bool verbosity) {
             logging::core::get()->set_filter(logging::trivial::severity >  logging::trivial::info);verbose = verbosity;
 }
 
-
-/*
- * Create the metrics table. Keys are timestamps.
- *
- * table=hostname_port ; use the host name and port as the name of the table
- * access_pattern_hint=sequential  ; This is the usual case for our application
- * key_format:u  ; Timestamps are keys, and we store them as 64 bit unsigned integers
- * value_format: uuu... ; Because we also store 64 bit unsigned integers
- * columns: timestamp,name,name,...  ; These are the names of the columns
- * colgroups=() ; Not sure if to use them yet
- * block_compressor=lz4 ; minimize space on disk
- */
-std::string FTDCParser::CreateWTConfigString() {
-
-    std::string configString;
-
-    configString = "table=metric";
-    configString += ",access_pattern_hint=sequential";
-    configString += ",key_format:u";
-    // Separate metrics in groups
-    auto metricNames = getMetricsNames();
-    std::map<std::string, std::vector<std::string>*> groups;
-
-    std::string columns="timestamp";
-    std::string format="u";
-    for (auto &metricName : metricNames) {
-
-        // Is this a group name?
-        auto groupName = groupNameFromMetricName(metricName);
-        if (!groupName.empty()) {
-
-            // substitute spaces by underscores in metric name.
-            std::replace(metricName.begin(), metricName.end(), ' ', '_');
-
-            // Does the group exist?
-            auto it = groups.find(groupName);
-            if (it == groups.end()) {
-                auto metrics = new std::vector<std::string>;
-                metrics->emplace_back(metricName);
-                groups.emplace(groupName, metrics); // new group
-            }
-            else {
-                it->second->emplace_back(metricName);
-            }
-            columns += ","+metricName;
-            format += "u";
-        }
-
-    }
-    configString += ",columns=" + columns;
-    //configString += ",value_format=" + format;
-    configString += "block_compressor=lz4";
-
-    return configString;
-
+int
+FTDCParser::parseFile(const std::string file,
+                      const bool onlyMetadata,
+                      const bool onlyMetricNames,
+                      const bool lazyParsing) {
+    std::vector<std::string> filePaths;
+    filePaths.emplace_back(file);
+    return parseFiles(filePaths, onlyMetadata, onlyMetricNames, lazyParsing);
 }
-
-std::string FTDCParser::groupNameFromMetricName(std::string metricName) {
-    // Metric names are separated by dots
-    std::istringstream iss(metricName);
-    std::vector<std::string> tokens;
-    std::string token;
-    while (std::getline(iss, token, '.')) {
-        if (!token.empty())
-            tokens.push_back(token);
-    }
-    return std::string(tokens[0]);
-}
-

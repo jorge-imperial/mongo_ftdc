@@ -35,51 +35,8 @@ size_t ReadMetricsFromCSV(std::string csvTestFile, std::vector<ChunkMetric *> * 
 
 
 // TODO: Move all these to another file
-void (*custom_die)(void) = nullptr;
-const char *progname = "program name not set";
-
-/*
- * testutil_die --
- *     Report an error and abort.
- */
-void
-testutil_die(int e, const char *fmt, ...)
-{
-    va_list ap;
-
-    /* Flush output to be sure it doesn't mix with fatal errors. */
-    (void)fflush(stdout);
-    (void)fflush(stderr);
-
-    /* Allow test programs to cleanup on fatal error. */
-    if (custom_die != nullptr)
-        (*custom_die)();
-
-    fprintf(stderr, "%s: FAILED", progname);
-    if (fmt != nullptr) {
-        fprintf(stderr, ": ");
-        va_start(ap, fmt);
-        vfprintf(stderr, fmt, ap);
-        va_end(ap);
-    }
-    if (e != 0)
-        fprintf(stderr, ": %s", wiredtiger_strerror(e));
-    fprintf(stderr, "\n");
-    fprintf(stderr, "%s: process aborting\n", progname);
-
-    abort();
-}
 
 
-/*
- * testutil_assert --
- *     Complain and quit if something isn't true.
- */
-#define testutil_assert(a)                                        \
-    do {                                                          \
-        if (!(a))                                                 \
-            testutil_die(0, "%s/%d: %s", __func__, __LINE__, #a); \
-    } while (0)
 
 struct TestFixtureParsing {
 
@@ -96,6 +53,9 @@ struct TestFixtureParsing {
     }
 
 };
+
+
+void CreateDirectoryIfNotPresent(const char *name, std::string & path) ;
 
 BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
 
@@ -122,12 +82,12 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         auto *parser = new FTDCParser();
 
         auto file_path = std::filesystem::current_path();
-        file_path.append(DATA_FILE_NAMES[0]);
+        file_path.append(file);
         BOOST_TEST_MESSAGE(file_path);
         bson_reader_t  *reader = parser->open(file_path);
         BOOST_CHECK(reader);
 
-        const bson_t *pBsonChunk = bson_reader_read(reader, 0);
+        const bson_t *pBsonChunk = bson_reader_read(reader, nullptr);
 
         parser->parseInfoChunk(pBsonChunk);
 
@@ -143,11 +103,11 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         bson_reader_t  *reader = parser->open(file);
         BOOST_CHECK(reader);
 
-        const bson_t * pBsonChunk = bson_reader_read(reader, 0);
+        const bson_t * pBsonChunk = bson_reader_read(reader, nullptr);
 
         parser->parseInfoChunk(pBsonChunk);
 
-        pBsonChunk = bson_reader_read(reader, 0);
+        pBsonChunk = bson_reader_read(reader, nullptr);
 
         Dataset dataset;
         ParserTasksList parserTasks;
@@ -163,7 +123,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
                     bson_iter_binary(&iter, &subtype, &bin_size, reinterpret_cast<const uint8_t **>(&data));
 
                     // the memory pointed to by data is managed internally. Better make a copy
-                    uint8_t *bin_data = new uint8_t[bin_size];
+                    auto bin_data = new uint8_t[bin_size];
                     memcpy(bin_data, data, bin_size);
                     parserTasks.push(bin_data, bin_size, id);
 
@@ -201,12 +161,12 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         bson_reader_t  *reader = parser->open(file);
         BOOST_CHECK(reader);
 
-        const bson_t *pBsonChunk = bson_reader_read(reader, 0);
+        const bson_t *pBsonChunk = bson_reader_read(reader, nullptr);
 
         parser->parseInfoChunk(pBsonChunk);
 
         // - - - - - - - - - -
-        pBsonChunk = bson_reader_read(reader, 0);
+        pBsonChunk = bson_reader_read(reader, nullptr);
 
         Dataset dataset;
         ParserTasksList parserTasks;
@@ -222,7 +182,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
                     bson_iter_binary(&iter, &subtype, &bin_size, reinterpret_cast<const uint8_t **>(&data));
 
                     // the memory pointed to by data is managed internally. Better make a copy
-                    uint8_t *bin_data = new uint8_t[bin_size];
+                    auto bin_data = new uint8_t[bin_size];
                     memcpy(bin_data, data, bin_size);
                     parserTasks.push(bin_data, bin_size, id);
                     break;
@@ -264,10 +224,10 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         // Compare first 1000 names
         for (int m = 0; m < 1000; ++m) {
 
-            auto pMetric = pChunk->getMetric(m);
+            auto pMetric = pChunk->getChunkMetric(m);
             if (!pMetric) BOOST_CHECK(pMetric);
 
-            if (pMetric->getName().compare(metricsNames[m]))
+            if (pMetric->getName() ==metricsNames[m])
                 BOOST_CHECK_EQUAL(pMetric->getName(), metricsNames[m]);
         }
 
@@ -302,16 +262,16 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         // Create parser
         auto parser = new FTDCParser();
 
-        bson_reader_t *reader  = parser->open(DATA_FILE_NAMES[0]);
+        bson_reader_t *reader  = parser->open(dataFile);
         BOOST_CHECK(reader);
 
-        const bson_t * pBsonChunk = bson_reader_read(reader, 0);
+        const bson_t * pBsonChunk = bson_reader_read(reader, nullptr);
 
 
         parser->parseInfoChunk(pBsonChunk);
 
         // - - - - - - - - - -
-        pBsonChunk = bson_reader_read(reader, 0);
+        pBsonChunk = bson_reader_read(reader, nullptr);
 
         Dataset dataset;
         ParserTasksList parserTasks;
@@ -327,7 +287,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
                     bson_iter_binary(&iter, &subtype, &bin_size, reinterpret_cast<const uint8_t **>(&data));
 
                     // the memory pointed to by data is managed internally. Better make a copy
-                    uint8_t *bin_data = new uint8_t[bin_size];
+                    auto bin_data = new uint8_t[bin_size];
                     memcpy(bin_data, data, bin_size);
                     parserTasks.push(bin_data, bin_size, id);
 
@@ -362,11 +322,11 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         BOOST_CHECK_EQUAL(metrics, pChunk->getMetricsCount());
 
         std::vector<ChunkMetric*> readMetrics;
-        auto metricsCount = ReadMetricsFromCSV(CSV_FILE_NAMES[0], &readMetrics);
+        auto metricsCount = ReadMetricsFromCSV(csvFile, &readMetrics);
 
         int brokenMetrics = 0;
         for (int i = 0; i < readMetrics.size(); ++i) {
-            auto pMetric = pChunk->getMetric(i);
+            auto pMetric = pChunk->getChunkMetric(i);
             auto pMetricsFromCSV = readMetrics[i];
 
             // BOOST_TEST_MESSAGE(str(boost::format("metric %1% name: %2%  (%4%) %3%")  % i % pMetric->getName() % pMetricsFromCSV->getName() % dataFile ));
@@ -406,16 +366,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
 
     // ------------------------
 
-    void CreateDirectoryIfNotPresent(const char *name, std::string & path) {
 
-        path = std::filesystem::current_path();
-        // create directory
-        if (!std::filesystem::exists("wt"))
-            std::filesystem::create_directory("wt");
-        // Open a connection to the database, creating it if necessary.
-        path += std::filesystem::path().preferred_separator;
-        path += "wt";
-    }
 
 
     BOOST_AUTO_TEST_CASE(test_wt_WriteOneDoc) {
@@ -425,12 +376,8 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         WT_SESSION *session;
         const char *key, *value;
 
-        // WT
-        std::string path;
-        CreateDirectoryIfNotPresent("wt", path);
 
-        auto ret = wiredtiger_open(path.c_str(), nullptr, "create", &conn);
-        BOOST_CHECK_EQUAL(ret,0);
+        int ret;
 
         // Open a session handle for the database.
         ret = conn->open_session(conn, nullptr, nullptr, &session);
@@ -460,71 +407,23 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
         BOOST_CHECK_EQUAL(ret,0);
     }
 
-    typedef struct {
-        char country[5];
-        uint16_t year;
-        uint64_t population;
-    } POP_RECORD;
 
-    static POP_RECORD pop_data[] = {
-            {"AU", 1900, 4000000},
-            {"AU", 1950, 8267337},
-            {"AU", 2000, 19053186},
-            {"CAN", 1900, 5500000},
-            {"CAN", 1950, 14011422},
-            {"CAN", 2000, 31099561},
-            {"UK", 1900, 369000000},
-            {"UK", 1950, 50127000},
-            {"UK", 2000, 59522468},
-            {"USA", 1900, 76212168},
-            {"USA", 1950, 150697361},
-            {"USA", 2000, 301279593},
-            {"", 0, 0}
-    };
 
-    std::string CreateNameList(std::vector<std::string> group) {
 
-        if (group.size() == 0) return "";
-
-        std::string ret = group[0];
-        for (int n=1;n<group.size(); ++n) {
-            ret += ",";
-            ret += group[n];
-        }
-        return ret;
-    }
 
     BOOST_AUTO_TEST_CASE(test_wt_WriteDocs)
     {
-            POP_RECORD *p = nullptr;
-            WT_CONNECTION *conn = nullptr;
-            WT_CURSOR *country_cursor,
-                      *country_cursor2,
-                      *cursor,
-                      *join_cursor,
-                      *stat_cursor,
-                      *subjoin_cursor,
-                      *year_cursor;
-            WT_SESSION *session = nullptr;
-            const char *country = nullptr;
-            uint64_t recno, population;
-            uint16_t year;
-
             // Create parser
             auto parser = new FTDCParser();
-            parser->parseFiles(DATA_FILE_NAMES[4]);
+            std::string file = std::string(DATA_FILE_NAMES[4]);
+            parser->parseFile(file);
 
-            std::string home;
-            CreateDirectoryIfNotPresent("parsed", home);
 
-            auto ret = wiredtiger_open(home.c_str(), nullptr, "create,statistics=(fast)", &conn);
-            BOOST_CHECK_EQUAL(ret ,0);
 
-            ret = conn->open_session(conn, nullptr, nullptr, &session);
 
-            std::string configStringWT = parser->CreateWTConfigString();
 
-            ret = session->create(session,  "table:metrics",  configStringWT.c_str());
+
+#if CACA
             /*
              * Create two column groups: a primary column group with the country code, year and population
              * (named "main"), and a population column group with the population by itself (named
@@ -753,7 +652,7 @@ BOOST_FIXTURE_TEST_SUITE(ParsingSuite, TestFixtureParsing);
             ret = (country_cursor2->close(country_cursor2));
             ret = (year_cursor->close(year_cursor));
             ret = (conn->close(conn, nullptr));
-
+#endif
         }
     }
 

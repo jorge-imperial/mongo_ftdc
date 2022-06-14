@@ -10,7 +10,6 @@
 #include <bson/bson.h>
 #include <sstream>
 #include <map>
-#include <boost/tokenizer.hpp>
 #include <boost/token_functions.hpp>
 
 #include "ChunkMetric.h"
@@ -467,6 +466,14 @@ Chunk::getCsvAtPosition(size_t pos) {
         ret += ",";
     }
     return ret;
+}
+
+size_t Chunk::getRawValuesAtPosition(uint64_t *values, size_t pos) {
+    size_t count = 0;
+    for (auto m : metrics)
+        values[count++] = m->getValue(pos);
+
+    return count;
 }
 
 

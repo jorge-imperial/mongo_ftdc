@@ -41,7 +41,9 @@ public:
     int getMetricsCount() { return metrics.size(); }
 
 
-    ChunkMetric *getMetric(int metricNumber) { return metrics[metricNumber]; };
+    ChunkMetric *getChunkMetric(int metricNumber) { return metrics[metricNumber]; };
+    size_t getChunkMetricsCount() { return metrics.size(); }
+
     size_t getMetric(const std::string metricName, uint64_t *data)  {
         for ( auto &m : metrics) {
             if (m->getName() == metricName) {
@@ -74,6 +76,8 @@ public:
     std::string getJsonFromTimestamp(Timestamp ts);
 
     std::string getCsvAtPosition(size_t pos);
+
+    size_t getRawValuesAtPosition(uint64_t *values, size_t pos);
 
 private:
     int inflate(const void *src, int srcLen, void *dst, int dstLen);

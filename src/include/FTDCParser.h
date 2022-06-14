@@ -25,7 +25,7 @@ public:
     bson_reader_t* open(std::string file_path);
 
     int parseFiles(std::vector<std::string> filePaths, bool onlyMetadata=false, bool onlyMetricNames=false, bool lazyParsing=false);
-    int parseFiles(std::string filePaths, bool onlyMetadata=false,  bool onlyMetricNames=false, bool lazyParsing=false);
+    int parseFile(const std::string file, bool onlyMetadata=false, bool onlyMetricNames=false, bool lazyParsing=false);
 
     int parseInfoChunk (const bson_t *bson);
     std::vector<std::string> getMetricsNamesPrefixed(std::string prefix) ;
@@ -57,7 +57,8 @@ public:
     // For testing.
     Dataset* getDataset() { return &dataSet; }
 
-    std::string CreateWTConfigString();
+
+
 
 private:
     ParserTasksList parserTasks;
@@ -65,7 +66,6 @@ private:
     std::vector<std::string> metadata;
     bool verbose = false;
 
-    std::string groupNameFromMetricName(std::string metricName);
 };
 
 

@@ -31,7 +31,7 @@ add_executable (
         basic_tests.cpp
         parsing_test.cpp
         #dataset_test.cpp
-        read_csv.cpp)
+        read_csv.cpp ../../src/MetricsToWTMap.cpp ../../src/include/MetricsToWTMap.h)
 
 target_include_directories (${PROJECT_NAME}  PUBLIC
         ${Boost_INCLUDE_DIRS}
