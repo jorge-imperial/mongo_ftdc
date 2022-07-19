@@ -25,7 +25,7 @@ public:
     bson_reader_t* open(std::string file_path);
 
     int parseFiles(std::vector<std::string> filePaths, bool onlyMetadata=false, bool onlyMetricNames=false, bool lazyParsing=false);
-    int parseFiles(std::string filePaths, bool onlyMetadata=false,  bool onlyMetricNames=false, bool lazyParsing=false);
+    int parseFile(const std::string file, bool onlyMetadata=false, bool onlyMetricNames=false, bool lazyParsing=false);
 
     int parseInfoChunk (const bson_t *bson);
     std::vector<std::string> getMetricsNamesPrefixed(std::string prefix) ;
@@ -35,7 +35,7 @@ public:
     std::vector<MetricsPtr> getMetric( std::vector<std::string> metricNames,
                                                 Timestamp start=INVALID_TIMESTAMP, Timestamp end=INVALID_TIMESTAMP, bool ratedMetric=false);
  
-    size_t getMetricLength() { return dataSet.getMetricLength(); }
+    size_t getMetricLength() { return 0; }
     std::vector<Chunk*> getChunks() { return dataSet.getChunkVector(); }
 
     std::vector<std::string> getMetadata() { return metadata; }
@@ -52,13 +52,20 @@ public:
 
     std::string getJsonAtPosition(size_t position);
 
-    void setVerbose(bool verbosity) { verbose = verbosity; }
+    void setVerbose(bool verbosity);
+
+    // For testing.
+    Dataset* getDataset() { return &dataSet; }
+
+
+
 
 private:
     ParserTasksList parserTasks;
     Dataset dataSet;
     std::vector<std::string> metadata;
     bool verbose = false;
+
 };
 
 

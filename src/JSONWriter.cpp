@@ -42,18 +42,22 @@ JSONWriter::dumpTimestamps(Dataset *dataset,  std::string outputFile,
     std::ofstream jsonFileStream;
     jsonFileStream.open(outputFile); // opens the file
     if (!jsonFileStream) { // file couldn't be opened
-        return 0;
+        BOOST_LOG_TRIVIAL(error) << "Could not open file " << outputFile;
+        return 1;
     }
 
     if (start == INVALID_TIMESTAMP)  start = dataset->getStartTimestamp();
     if (end == INVALID_TIMESTAMP) end = dataset->getEndTimestamp();
 
-    WriterTaskList jsonTasks(start, end, dataset->getMetricLength());
 
-    auto ts = dataset->getMetric("start",start,end,rated);
+    auto ts = dataset->getMetric("start", start, end,rated);
+    BOOST_LOG_TRIVIAL(debug) << "WriterTasks: From " << start << " to " << end << ". Metrics size " << ts->size();
+    WriterTaskList jsonTasks(start, end,ts->size());
     size_t i = 0;
-    for (auto t : *ts)
+    for (auto t : *ts) {
+
         jsonTasks.setTimestamp(i++, t);
+    }
 
 
     // Thread pool
@@ -67,5 +71,5 @@ JSONWriter::dumpTimestamps(Dataset *dataset,  std::string outputFile,
     // Wait for threads to finish
     threads.join_all();
 
-    return dataset->getMetricLength();
+    return 0;
 }

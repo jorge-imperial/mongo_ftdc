@@ -4,7 +4,7 @@
 #include "include/ChunkMetric.h"
 
 
-ChunkMetric::ChunkMetric(std::string name, bson_type_t type, int64_t initialValue) {
+ChunkMetric::ChunkMetric(std::string name, bson_type_t type, int64_t initialValue) : nSamples(0){
     this->name = std::move(name);
     this->type = type;
     values[0] = initialValue;
@@ -13,3 +13,4 @@ ChunkMetric::ChunkMetric(std::string name, bson_type_t type, int64_t initialValu
 ChunkMetric::ChunkMetric(std::string name) {
     this->name = std::move(name);
 }
+

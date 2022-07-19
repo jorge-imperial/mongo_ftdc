@@ -6,3 +6,4 @@ MANIFEST
 /src/pyftdc.egg-info/
 /dist
 /.idea
+/tests/wt

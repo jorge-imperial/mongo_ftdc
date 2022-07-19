@@ -28,7 +28,7 @@ public:
     static const int INVALID_CHUNK_NUMBER   = INT_MAX;
     static const int INVALID_TIMESTAMP_POS = INT_MAX;
 
-    Chunk (const uint8_t *data, size_t size, int64_t id, bool logMetricNames);
+    Chunk (const uint8_t *data, size_t size, int64_t id);
     ~Chunk() {
         delete [] compressed ;
         delete [] decompressed;
@@ -41,11 +41,13 @@ public:
     int getMetricsCount() { return metrics.size(); }
 
 
-    ChunkMetric *getMetric(int metricNumber) { return metrics[metricNumber]; };
+    ChunkMetric *getChunkMetric(int metricNumber) { return metrics[metricNumber]; };
+    size_t getChunkMetricsCount() { return metrics.size(); }
+
     size_t getMetric(const std::string metricName, uint64_t *data)  {
         for ( auto &m : metrics) {
-            if (m->name == metricName) {
-                memcpy(data, m->values, (deltasInChunk+1)*sizeof(uint64_t));
+            if (m->getName() == metricName) {
+                memcpy(data, m->getValues(), (deltasInChunk+1)*sizeof(uint64_t));
                 return deltasInChunk;
             }
         }
@@ -53,15 +55,15 @@ public:
     }
     uint64_t *getMetric(const std::string metricName) {
         for ( auto &m : metrics) {
-            if (m->name == metricName)
-                return m->values;
+            if (m->getName() == metricName)
+                return m->getValues();
         }
         return 0;
     }
     size_t getMetricNames(std::vector<std::string> & metricNames);
 
-    int64_t getId() const { return id; };
-    size_t getSamplesCount() const { return 1+deltasInChunk; };
+    int64_t getId()  { return id; };
+    size_t getSamplesCount()  { return 1+deltasInChunk; };
     Timestamp getStart() { return  start; };
     Timestamp getEnd() { return end; };
     void setTimestampLimits();
@@ -74,6 +76,8 @@ public:
     std::string getJsonFromTimestamp(Timestamp ts);
 
     std::string getCsvAtPosition(size_t pos);
+
+    size_t getRawValuesAtPosition(uint64_t *values, size_t pos);
 
 private:
     int inflate(const void *src, int srcLen, void *dst, int dstLen);

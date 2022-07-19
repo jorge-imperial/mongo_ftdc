@@ -7,8 +7,10 @@
 #include <boost/thread.hpp>
 #include <boost/thread/detail/thread_group.hpp>
 #include <fstream>
+#include <boost/log/trivial.hpp>
 #include "WriterTaskList.h"
 #include "WriterTask.h"
+
 
 static size_t counter = 0;
 
@@ -33,7 +35,7 @@ CsvWriterConsumerThread(WriterTaskList *writerTasks,
 }
 
 size_t
-CSVWriter::dumpCSVTimestamps( Dataset *dataset, std::string outputPath, Timestamp start, Timestamp end, bool rated) {
+CSVWriter::dumpCSVTimestamps(Dataset *pDataset, std::string outputPath, Timestamp start, Timestamp end, bool rated) {
 
     // get metrics
     std::map<std::string, MetricsPtr> hashedMetrics;
@@ -41,14 +43,16 @@ CSVWriter::dumpCSVTimestamps( Dataset *dataset, std::string outputPath, Timestam
     std::ofstream csvFileStream;
     csvFileStream.open(outputPath); // opens the file
     if (!csvFileStream) { // file couldn't be opened
-        return 0;
+        BOOST_LOG_TRIVIAL(error) << "Could not open " << outputPath;
+        return 1;
     }
 
-    if (start == INVALID_TIMESTAMP)  start = dataset->getStartTimestamp();
-    if (end == INVALID_TIMESTAMP) end = dataset->getEndTimestamp();
+    if (start == INVALID_TIMESTAMP)  start = pDataset->getStartTimestamp();
+    if (end == INVALID_TIMESTAMP) end = pDataset->getEndTimestamp();
 
-    WriterTaskList csvTasks(start, end, dataset->getMetricLength());
-    auto ts = dataset->getMetric("start",start,end,false);
+
+    auto ts = pDataset->getMetric("start", start, end,false);
+    WriterTaskList csvTasks(start, end, ts->size());
     size_t i = 0;
     for (auto t : *ts)
         csvTasks.setTimestamp(i++, t);
@@ -56,23 +60,22 @@ CSVWriter::dumpCSVTimestamps( Dataset *dataset, std::string outputPath, Timestam
 
     // Write metric names in first row
     std::vector<std::string> metricNames ;
-    auto n = dataset->getMetricNames(metricNames);
+    auto n = pDataset->getMetricNames(metricNames);
     csvFileStream << "#line,";
     for (size_t i=0;i<metricNames.size();++i)
         csvFileStream << "\"" << metricNames[i] << "\",";
-
-
+    BOOST_LOG_TRIVIAL(debug) << "WriterTasks: From " << start << " to " << end << ". Metrics size " << ts->size();
     // Thread pool
     size_t numThreads = boost::thread::hardware_concurrency() - 1;
     boost::thread_group threads;
 
     for (size_t i = 0; i < numThreads; ++i)
         threads.add_thread(
-                new boost::thread(CsvWriterConsumerThread, &csvTasks, dataset,   &csvFileStream));
+                new boost::thread(CsvWriterConsumerThread, &csvTasks, pDataset,   &csvFileStream));
 
     // Wait for threads to finish
     threads.join_all();
 
-    return dataset->getMetricLength();
+    return 0;
 }
 

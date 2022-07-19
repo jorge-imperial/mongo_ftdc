@@ -1,0 +1,10 @@
+start;1626272967003;1626272968000
+serverStatus.start;1626272967003;1626272968000
+serverStatus.pid;8162;8162
+serverStatus.uptime;4621256167635550208;0
+serverStatus.uptimeMillis;8230;9227
+serverStatus.uptimeEstimate;8;9
+serverStatus.localTime;1626272967003;1626272968000
+serverStatus.regular;0;0
+serverStatus.warning;0;0
+serverStatus.msg;0;0

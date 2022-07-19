@@ -4,7 +4,9 @@ def test_import():
     import pyftdc
     assert 0 == 0
 
-diagnostics_file = './diagnostic.data_40/metrics.2021-07-22T17-16-31Z-00000'
+
+diagnostics_file = './diagnostic.data/metrics.5.0.2.ftdc'
+
 
 def test_parse():
     import pyftdc
@@ -79,7 +81,7 @@ def test_metrics_samples():
     assert len(n) == len(m)
 
     ts = p.get_timestamps()
-    middle_ts = ts[int(len(ts)/2)]
+    middle_ts = ts[int(len(ts) / 2)]
 
     h1 = p.get_metric(metrics[73], end=middle_ts)
     h2 = p.get_metric(metrics[73], start=middle_ts)
@@ -87,18 +89,18 @@ def test_metrics_samples():
     assert len(ts) == len(h1) + len(h2)
 
     # Ten samples (same chunk, for this metrics file)
-    ten_more = ts[int(len(ts)/2)+10]
+    ten_more = ts[int(len(ts) / 2) + 10]
     m_10 = p.get_metric(metrics[37], start=middle_ts, end=ten_more)
 
     assert 10 == len(m_10)
 
     # Four hundred so me use two chunks (again, for this particular metrics file)
-    four_hundred_more = ts[int(len(ts)/2)+400]
+    four_hundred_more = ts[int(len(ts) / 2) + 400]
     m_400 = p.get_metric(metrics[37], start=middle_ts, end=four_hundred_more)
     assert 400 == len(m_400)
 
 
-#TODO: Test for lists of samples
+# TODO: Test for lists of samples
 
 def test_metrics_numpy():
     import pyftdc
@@ -115,7 +117,7 @@ def test_metrics_numpy():
     assert len(n) == len(m)
 
     ts = p.get_timestamps()
-    middle_ts = ts[int(len(ts)/2)]
+    middle_ts = ts[int(len(ts) / 2)]
 
     h1 = p.get_metric_numpy(metrics[73], end=middle_ts)
     h2 = p.get_metric_numpy(metrics[73], start=middle_ts)
@@ -123,13 +125,13 @@ def test_metrics_numpy():
     assert len(ts) == len(h1) + len(h2)
 
     # Ten samples (same chunk, for this metrics file)
-    ten_more = ts[int(len(ts)/2)+10]
+    ten_more = ts[int(len(ts) / 2) + 10]
     m_10 = p.get_metric_numpy(metrics[37], start=middle_ts, end=ten_more)
 
     assert 10 == len(m_10)
 
     # Four hundred so me use two chunks (again, for this particular metrics file)
-    four_hundred_more = ts[int(len(ts)/2)+400]
+    four_hundred_more = ts[int(len(ts) / 2) + 400]
     m_400 = p.get_metric_numpy(metrics[37], start=middle_ts, end=four_hundred_more)
     assert 400 == len(m_400)
     assert str(type(m_400)) == "<class 'numpy.ndarray'>"
@@ -155,7 +157,7 @@ def test_metrics_rated_numpy():
 
     assert len(n) == len(m)
 
-    m_rated_with_name = p.get_metric('@'+metrics[37])
+    m_rated_with_name = p.get_metric('@' + metrics[37])
     m_rated = p.get_metric(metrics[37], rated_metric=True)
 
     assert len(m_rated_with_name) == len(m_rated)
@@ -262,4 +264,3 @@ def test_metrics_stall():
     mm = p.get_metrics_list_numpy(ftdc_metrics_keys)
 
     print(len(mm))
-

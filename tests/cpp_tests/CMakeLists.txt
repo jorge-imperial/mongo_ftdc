@@ -1,9 +1,12 @@
 project(Boost_Tests_run)
 
+set (Boost_USE_STATIC_LIBS OFF)
 find_package (Boost REQUIRED COMPONENTS unit_test_framework)
+include_directories (${Boost_INCLUDE_DIRS})
 
-add_executable (${PROJECT_NAME}
-        basic_tests.cpp
+
+add_executable (
+        ${PROJECT_NAME}
 
         ${CMAKE_SOURCE_DIR}/src/Dataset.cpp
         ${CMAKE_SOURCE_DIR}/src/ParserTask.cpp
@@ -16,7 +19,6 @@ add_executable (${PROJECT_NAME}
         ${CMAKE_SOURCE_DIR}/src/include/SampleLocation.h
         ${CMAKE_SOURCE_DIR}/src/include/Timestamp.h
         ${CMAKE_SOURCE_DIR}/src/include/Metrics.h
-
         ${CMAKE_SOURCE_DIR}/src/WriterTaskList.cpp
         ${CMAKE_SOURCE_DIR}/src/include/WriterTaskList.h
         ${CMAKE_SOURCE_DIR}/src/WriterTask.cpp
@@ -25,7 +27,11 @@ add_executable (${PROJECT_NAME}
         ${CMAKE_SOURCE_DIR}/src/include/CSVWriter.h
         ${CMAKE_SOURCE_DIR}/src/CSVWriter.cpp
         ${CMAKE_SOURCE_DIR}/src/include/Timestamp.h
-        )
+
+        basic_tests.cpp
+        parsing_test.cpp
+        #dataset_test.cpp
+        read_csv.cpp ../../src/MetricsToWTMap.cpp ../../src/include/MetricsToWTMap.h)
 
 target_include_directories (${PROJECT_NAME}  PUBLIC
         ${Boost_INCLUDE_DIRS}
@@ -37,6 +43,7 @@ target_include_directories (${PROJECT_NAME}  PUBLIC
 
 target_link_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_CURRENT_BINARY_DIR}/../../src/mongo-c-driver/src/libbson
+        /usr/local/lib
 )
 
 target_link_libraries (${PROJECT_NAME}

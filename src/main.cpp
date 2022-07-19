@@ -70,7 +70,7 @@ struct ParserClass {
     int parseFile(std::string file, bool lazy=true) {
 
         fileList.emplace_back(file);
-        int n = pParser->parseFiles(&fileList, false, false, lazy);
+        int n = pParser->parseFiles(fileList, false, false, lazy);
 
         if (n == 0) {
             // Timestamps, metric names, and metadata as fields in python
@@ -93,7 +93,7 @@ struct ParserClass {
 
             // Not really necessary.
             std::sort(fileList.begin(), fileList.end());
-            int n = pParser->parseFiles(&fileList, false, false, lazy);
+            int n = pParser->parseFiles(fileList, false, false, lazy);
 
             if (n == 0) {
                 // metric names and metadata as fields in python
