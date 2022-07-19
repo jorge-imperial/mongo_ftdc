@@ -50,6 +50,5 @@ target_link_libraries (${PROJECT_NAME}
         ${Boost_LIBRARIES}
         Boost::log
         bson-static-1.0.a
-        wiredtiger
 )
 

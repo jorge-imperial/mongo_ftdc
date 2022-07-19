@@ -7,7 +7,6 @@
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
-#include <wiredtiger.h>
 
 
 namespace logging = boost::log;
@@ -25,7 +24,6 @@ Dataset::LoadMetricsNamesFromChunk() {
 
     return 0;
 }
-
 
 size_t
 Dataset::getMetricNames(std::vector<std::string> & metrics) {
@@ -256,8 +254,8 @@ Dataset::finishedParsingFile(std::string path, Timestamp start, Timestamp end, s
     filesParsed.emplace_back(fileData);
 
     // WT
-    initWT();
-    writeWT();
+    initMongoStorage();
+    writeAsCollections();
 }
 
 std::vector<MetricsPtr>
@@ -308,7 +306,8 @@ Dataset::getMetricMatrix(const std::vector<std::string> metricNames, size_t *str
     return p;
 }
 
-uint64_t Dataset::getMetricValue(std::string metricName, size_t pos) {
+uint64_t
+Dataset::getMetricValue(std::string metricName, size_t pos) {
     int chunkNumber = pos / ChunkMetric::MAX_SAMPLES;
     int posInChunk = pos % ChunkMetric::MAX_SAMPLES;
     auto v = chunkVector[chunkNumber]->getMetric(metricName);
@@ -355,11 +354,6 @@ Dataset::getCsvFromTimestamp(Timestamp ts) {
     return chunkVector[location.getChunkLoc()]->getCsvAtPosition(location.getSampleLoc());
 }
 
-
-// - - - - -
-
-
-
 /*
  * Create the metrics table. Keys are timestamps.
  *
@@ -371,10 +365,8 @@ Dataset::getCsvFromTimestamp(Timestamp ts) {
  * colgroups=() ; Not sure if to use them yet
  * block_compressor=lz4 ; minimize space on disk
  */
-std::string
-Dataset::createWTConfigString() {
-
-    std::string configString;
+size_t
+Dataset::createMetricsMaps() {
 
     std::vector<std::string> metricNames;
     for (auto & chunk : chunkVector) {
@@ -390,195 +382,34 @@ Dataset::createWTConfigString() {
     metricNames.erase( unique(metricNames.begin(),metricNames.end()), metricNames.end());
 
     // Separate metrics in collections and groups
-    for (auto &metricName : metricNames)
-        wtMetricsMap.add(metricName);
+    for (auto &metricName : metricNames) {
+        MetricsMap.add(metricName);
+    }
 
-    return configString;
+    return 0;
 }
 
 
 int 
-Dataset::initWT() {
+Dataset::initMongoStorage() {
 
-    wiredTigerConfig = createWTConfigString();
+    createMetricsMaps();
 
-    wiredTigerDBPath = std::filesystem::current_path();
+    mongoDBPath = std::filesystem::current_path();
     // create directory
-    if (!std::filesystem::exists("wt"))
-        std::filesystem::create_directory("wt");
+    if (!std::filesystem::exists("dbpath"))
+        std::filesystem::create_directory("dbpath");
 
     // Open a connection to the database, creating it if necessary.
-    wiredTigerDBPath += std::filesystem::path().preferred_separator;
-    wiredTigerDBPath += "wt";
+    mongoDBPath += std::filesystem::path().preferred_separator;
+    mongoDBPath += "dbpath";
 
-     return 0;
+    return 0;
 }
-
-// ----------------------------------------------------------------------------------------
-
-static const char *home;
-
-void
-testutil_die(int e, const char *fmt, ...)
-{
-    va_list ap;
-
-    // Flush output to be sure it doesn't mix with fatal errors.
-    (void)fflush(stdout);
-    (void)fflush(stderr);
-
-    fprintf(stderr, "program: FAILED" );
-    if (fmt != NULL) {
-        fprintf(stderr, ": ");
-        va_start(ap, fmt);
-        vfprintf(stderr, fmt, ap);
-        va_end(ap);
-    }
-    if (e != 0)
-        fprintf(stderr, ": %s", wiredtiger_strerror(e));
-    fprintf(stderr, "\n");
-    (void)fflush(stderr);
-
-    // Allow test programs to cleanup on fatal error.
-    void *const custom_die = NULL;
-
-    //if (custom_die != NULL) (*custom_die)();
-
-    // Drop core.
-    fprintf(stderr, "process aborting\n");
-    //__wt_abort(NULL);
-}
-
-#define error_check(call)                                                         \
-    do {                                                                          \
-        int __r;                                                                  \
-        if ((__r = (call)) != 0 && __r != ENOTSUP)                                \
-            testutil_die(__r, "%s/%d: %s", __PRETTY_FUNCTION__, __LINE__, #call); \
-    } while (0)
-
-void
-testutil_make_work_dir(const char *dir)
-{
- ;
-}
-
-const char *
-example_setup()
-{
-    const char *home;
-
-    /*
-     * Create a clean test directory for this run of the test program if the environment variable
-     * isn't already set (as is done by make check).
-     */
-    if ((home = getenv("WIREDTIGER_HOME")) == NULL)
-        home = "/home/jorge/CLionProjects/mongo_ftdc/tests/wt";
-
-    testutil_make_work_dir(home);
-    return (home);
-}
-
 
 
 int
-Dataset::writeWT() {
-
-    WT_CONNECTION *conn;
-    WT_SESSION *session;
-    WT_CURSOR *cursor;
-
-#define TABLE_NAME "table:local"
-
-
-    home = example_setup();
-
-    // Open a connection to the database, creating it if necessary.
-    error_check(wiredtiger_open(home, NULL, "create", &conn));
-
-    // Open a session for the current thread's work.
-    error_check(conn->open_session(conn, NULL, NULL, &session));
-
-
-//    std::vector<std::string> *timestamps = tableNames["start"];
-//    std::vector<std::string> *localColumns = tableNames["local"];
-//    unsigned long n = localColumns->size();
-//
-    /*
-    error_check(session->create(session, TABLE_NAME,
-                                "key_format=r,value_format=HHHHBBBB5S5S,"
-                                "columns=(id,hour,pressure,loc_lat,loc_long,temp,humidity,wind,feels_like_temp,day,country),"
-                                "colgroups=(day_time,temperature,humidity_pressure,wind,feels_like_temp,location)"));
-    // Colgroups
-    error_check(session->create(session, "colgroup:weather:day_time", "columns=(hour,day)"));
-    error_check(session->create(session, "colgroup:weather:temperature", "columns=(temp)"));
-    error_check(session->create(session, "colgroup:weather:humidity_pressure", "columns=(pressure,humidity)"));
-    error_check(session->create(session, "colgroup:weather:wind", "columns=(wind)"));
-    error_check(session->create(session, "colgroup:weather:feels_like_temp", "columns=(feels_like_temp)"));
-    error_check(session->create(session, "colgroup:weather:location", "columns=(loc_lat,loc_long,country)"));
-     */
-
-    for (size_t i=0;i<wtMetricsMap.getTableCount(); ++i)
-        BOOST_LOG_TRIVIAL(info) << "Table: " << wtMetricsMap.getTableName(i);
-
-
-    size_t localIndex = wtMetricsMap.getTableIndexByName(std::string("local"));
-    std::string localName = wtMetricsMap.getTableName(localIndex);
-
-    std::string localColumnNames = wtMetricsMap.getColumnsForTable(localName);
-
-    error_check(session->create(session, TABLE_NAME,
-                                "key_format=Q,columns=(ts,rec)"));
-
-    error_check(session->open_cursor(session, TABLE_NAME, NULL, "append", &cursor));
-    for (uint64_t i = 0; i < 100; i++) {
-        /*
-        cursor->set_value(cursor,
-                          weather_data[i].hour,
-                          weather_data[i].pressure,
-                          weather_data[i].loc_lat,
-                          weather_data[i].loc_long,
-                          weather_data[i].temp,
-                          weather_data[i].humidity,
-                          weather_data[i].wind,
-                          weather_data[i].feels_like_temp,
-                          weather_data[i].day,
-                          weather_data[i].country);
-        */
-        WT_ITEM value;
-        uint64_t arr[10];
-
-        for (int j=0;j<10; ++j) arr[i] = (i*10) + j;
-        value.size = sizeof(arr);
-        cursor->set_key(cursor, i);
-        cursor->set_value(cursor, value);
-        
-        error_check(cursor->insert(cursor));
-    }
-    // Close cursor.
-    error_check(cursor->close(cursor));
-
-    // Create indexes for searching
-    error_check(session->create(session, "index:weather:ts", "columns=(ts)"));
-    //error_check(session->create(session, "index:weather:country", "columns=(country)"));
-
-    /*
-    {
-        size_t size;
-        char buf[50];
-
-        error_check(wiredtiger_struct_size(session, &size, "iii", 42, 1000, -9));
-        if (size > sizeof(buf)) {
-            // Allocate a bigger buffer. 
-        }
-
-        error_check(wiredtiger_struct_pack(session, buf, size, "iii", 42, 1000, -9));
-
-        error_check(wiredtiger_struct_unpack(session, buf, size, "iii", &i, &j, &k));
-    }
-     */
-
-    // Note: closing the connection implicitly closes open session(s).
-    error_check(conn->close(conn, NULL));
+Dataset::writeAsCollections() {
 
     return 0;
 }

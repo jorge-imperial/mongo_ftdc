@@ -68,6 +68,7 @@ pybind11_add_module(_core MODULE
         src/WriterTaskList.cpp
         src/JSONWriter.cpp
         src/CSVWriter.cpp
+        src/MetricsToWTMap.cpp
        )
 
 MESSAGE("*** Libbson headers:  "  ${CMAKE_SOURCE_DIR}/src/mongo-c-driver/src/libbson/src)

@@ -338,7 +338,7 @@ Chunk::ConstructMetrics(const uint8_t* data ) {
 
             ::bson_iter_visit_all(&iter, &vt, &v);
 
-            BOOST_LOG_TRIVIAL(debug) << "Visited: " << v.visited << "  Metrics: " << v.metrics->size();
+            //BOOST_LOG_TRIVIAL(debug) << "Visited: " << v.visited << "  Metrics: " << v.metrics->size();
             if (metricsInChunk != metrics.size())
                 BOOST_LOG_TRIVIAL(error) << "Wrong number of metrics: " << v.metrics->size() << "!=" << metricsInChunk;
         }

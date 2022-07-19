@@ -9,7 +9,6 @@
 #include <vector>
 #include <map>
 #include <boost/thread/mutex.hpp>
-#include <wiredtiger.h>
 #include "SampleLocation.h"
 #include "Chunk.h"
 #include "FileParsedData.h"
@@ -58,9 +57,9 @@ private:
     bool ConvertToRatedMetric(MetricsPtr pVector);
 
 
-    int initWT();
-    int writeWT();
-    std::string createWTConfigString();
+    int initMongoStorage();
+    int writeAsCollections();
+    size_t createMetricsMaps();
 private:
     std::vector<Chunk*> chunkVector;
     size_t samplesInDataset;
@@ -68,12 +67,8 @@ private:
     std::vector<std::string> metricNames;
     std::map<std::string,  MetricsPtr>  hashMapMetrics;
     bool lazyParsing;
-
-    std::string wiredTigerConfig;
-    std::string wiredTigerDBPath;
-    WT_CONNECTION *conn;
-
-    MetricsToWTMap wtMetricsMap;
+    MetricsToWTMap MetricsMap;
+    std::filesystem::path mongoDBPath;
 };
 
 
